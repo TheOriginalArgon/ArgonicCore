@@ -1,0 +1,9 @@
+<ModMetaData>
+    <name>Argonic Core</name>
+    <author>Argón</author>
+    <packageId>Argon.CoreLib</packageId>
+    <supportedVersions>
+        <li>1.4</li>
+    </supportedVersions>
+    <description>Code Framework.</description>
+</ModMetaData>

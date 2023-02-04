@@ -1,0 +1,19 @@
+<Defs>
+
+    <StatDef>
+        <defName>ArgonicCore_FuelPower</defName>
+        <label>fuel power</label>
+        <description>How efficient this is when used as fuel.</description>
+        <category>BasicsNonPawn</category>
+        <defaultBaseValue>1</defaultBaseValue>
+        <minValue>0.1</minValue>
+        <toStringStyle>Integer</toStringStyle>
+        <roundValue>true</roundValue>
+        <roundToFiveOver>300</roundToFiveOver>
+        <showIfUndefined>true</showIfUndefined>
+        <scenarioRandomizable>false</scenarioRandomizable>
+        <showOnPawns>false</showOnPawns>
+        <displayPriorityInCategory>2900</displayPriorityInCategory>
+    </StatDef>
+
+</Defs>
