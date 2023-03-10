@@ -50,14 +50,23 @@
       <HintPath>..\..\..\..\..\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>..\..\..\..\..\RimWorldWin64_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArgonicCore.cs" />
-    <Compile Include="CompCrate.cs" />
-    <Compile Include="CompProperties_Crate.cs" />
+    <Compile Include="ArgonicCore_VFECodeExtension.cs" />
+    <Compile Include="Comps\CompCanGiveHediff.cs" />
+    <Compile Include="Comps\CompContaminable.cs" />
+    <Compile Include="Comps\CompCrate.cs" />
+    <Compile Include="Comps\CompRuinOverTime.cs" />
     <Compile Include="CompUseEffect_SpawnCrateContents.cs" />
-    <Compile Include="CrateLoadoutDef.cs" />
-    <Compile Include="HarmonyPatch_FuelPower.cs" />
+    <Compile Include="CustomDefs.cs" />
+    <Compile Include="HarmonyPatches.cs" />
+    <Compile Include="Hediffs\Hediff_Poison.cs" />
+    <Compile Include="IngestionOutcomes\IngestionOutcomeDoer_GiveHediffIfContaminated.cs" />
+    <Compile Include="ModExtensions\ThingDefExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

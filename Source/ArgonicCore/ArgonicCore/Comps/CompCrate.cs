@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using RimWorld;
 using Verse;
 
-namespace ArgonicCore
+namespace ArgonicCore.Comps
 {
     public class CompCrate : ThingComp
     {
@@ -36,6 +36,17 @@ namespace ArgonicCore
             }
 
             return stringBuilder.ToString();
+        }
+    }
+
+    public class CompProperties_Crate : CompProperties
+    {
+        public CrateLoadoutDef crateLoadout;
+        public bool isLocked = false;
+
+        public CompProperties_Crate()
+        {
+            compClass = typeof(CompCrate);
         }
     }
 }
