@@ -65,6 +65,7 @@
     <Compile Include="CustomDefs.cs" />
     <Compile Include="HarmonyPatches.cs" />
     <Compile Include="Hediffs\Hediff_Poison.cs" />
+    <Compile Include="IngestionOutcomes\IngestionOutcomeDoer_CanGiveHediff.cs" />
     <Compile Include="IngestionOutcomes\IngestionOutcomeDoer_GiveHediffIfContaminated.cs" />
     <Compile Include="ModExtensions\ThingDefExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

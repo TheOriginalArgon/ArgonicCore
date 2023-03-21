@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
 using ArgonicCore.Comps;
+using ArgonicCore.ModExtensions;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -118,6 +119,29 @@ namespace ArgonicCore
                     yield return product;
                 }
             }
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(GenRecipe), "PostProcessProduct")]
+        private static bool ReturnBotchedThing(Thing product, Pawn worker, ref Thing __result)
+        {
+            if (product.def.HasModExtension<ThingDefExtension_BotchableOnMake>())
+            {
+                ThingDefExtension_BotchableOnMake extension = product.def.GetModExtension<ThingDefExtension_BotchableOnMake>();
+
+                if (Rand.Chance(2f / worker.skills.GetSkill(extension.skillRequirement).Level))
+                {
+                    int randomIndex = Rand.RangeInclusive(0, extension.botchProducts.Count);
+
+                    Thing botchedThing = ThingMaker.MakeThing(extension.botchProducts[randomIndex].thingDef);
+                    botchedThing.stackCount = extension.botchProducts[randomIndex].count;
+
+                    Messages.Message("TM_MessageProductBotched".Translate(worker.LabelShort, product.Label, worker.Named("PAWN"), product.Named("PRODUCT")), worker, MessageTypeDefOf.NegativeEvent);
+                    __result = botchedThing;
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }
