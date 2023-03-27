@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using ArgonicCore.Comps;
 using ArgonicCore.ModExtensions;
@@ -142,6 +143,163 @@ namespace ArgonicCore
                 }
             }
             return true;
+        }
+
+        // Patches for interchangable stuff.
+
+        public static bool IsNecessaryResourceInList(this ThingDef thingDef, List<ThingDefCountClass> list)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                ThingDef thingDef_compare = list[i].thingDef;
+
+                if (thingDef_compare.defName == thingDef.defName) { return true; }
+            }
+
+            return false;
+        }
+
+        public static bool IsNecessaryResourceInBuilding(this ThingDef thingDef, BuildableDef buildableDef)
+        {
+            for (int i = 0; i < buildableDef.costList.Count; i++)
+            {
+                ThingDef thingDef_compare = buildableDef.costList[i].thingDef;
+
+                if (thingDef_compare.defName == thingDef.defName) { return true; }
+            }
+
+            return false;
+        }
+
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(CostListCalculator), nameof(CostListCalculator.CostListAdjusted), new[] { typeof(BuildableDef), typeof(ThingDef), typeof(bool) })]
+        private static IEnumerable<CodeInstruction> AddInterchangableResources(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            List<CodeInstruction> code = new List<CodeInstruction>(instructions);
+
+            Label jumpLabel_01 = generator.DefineLabel();
+
+            int insertion_index = -1;
+
+            for (int i = 0; i < code.Count; i++)
+            {
+                // Check for label insertion.
+                if (code[i].Calls(AccessTools.Method(typeof(List<ThingDefCountClass>), "Add")) && code[i + 1].opcode == OpCodes.Ldloc_S)
+                {
+                    code[i + 1].labels.Add(jumpLabel_01);
+                }
+
+                // Insert new code.
+                if (code[i].opcode == OpCodes.Ldloc_S && code[i + 1].Calls(AccessTools.Method(typeof(List<ThingDefCountClass>), "Add")))
+                {
+                    insertion_index = i + 2; // Inserts behind.
+                }
+            }
+
+            List<CodeInstruction> codeToAdd = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Ldloc_S, 5),
+                new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ThingDefCountClass), nameof(ThingDefCountClass.thingDef))),
+                new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(Def), nameof(Def.HasModExtension), new Type[] { }, new Type[] { typeof(ThingDefExtension_InterchangableResource) })),
+                new CodeInstruction(OpCodes.Brfalse_S, jumpLabel_01),
+                new CodeInstruction(OpCodes.Ldloc_0),
+                new CodeInstruction(OpCodes.Ldloc_S, 5),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches_Generic), nameof(DuplicateCountClass))),
+                new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(List<ThingDefCountClass>), "AddRange"))
+            };
+
+            code.InsertRange(insertion_index, codeToAdd);
+            code.InsertRange(insertion_index - 4, codeToAdd);
+
+            // Debug.
+            foreach (CodeInstruction i in code)
+            {
+                Log.Message("[AC] " + i.ToString());
+            }
+
+            return code.AsEnumerable();
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Frame), nameof(Frame.MaterialsNeeded))]
+        private static bool MaterialsNeeded(Frame __instance, ref List<ThingDefCountClass> ___cachedMaterialsNeeded, ref ThingOwner ___resourceContainer, ref List<ThingDefCountClass> __result)
+        {
+            ___cachedMaterialsNeeded.Clear();
+            List<ThingDefCountClass> list = __instance.def.entityDefToBuild.CostListAdjusted(__instance.Stuff, true);
+            for (int i = 0; i < list.Count; i++)
+            {
+                ThingDefCountClass thingDefCountClass = list[i];
+
+                int num = ___resourceContainer.TotalStackCountOfDef(thingDefCountClass.thingDef);
+
+                if (thingDefCountClass.thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
+                {
+                    List<ThingDef> interchangableDefs = thingDefCountClass.thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().interchangableWith;
+                    for (int j = 0; j < interchangableDefs.Count; j++)
+                    {
+                        num += ___resourceContainer.TotalStackCountOfDef(interchangableDefs[j]);
+                    }
+                }
+                else
+                {
+                    for (int j = 0; j < list.Count; j++)
+                    {
+                        if (list[j].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
+                        {
+                            List<ThingDef> thingDefs_compare = list[j].thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().interchangableWith;
+
+                            if (thingDefs_compare.Contains(thingDefCountClass.thingDef))
+                            {
+                                num += ___resourceContainer.TotalStackCountOfDef(list[j].thingDef);
+                            }
+                        }
+                    }
+                }
+
+                int num2 = thingDefCountClass.count - num;
+                if (num2 > 0)
+                {
+                    ___cachedMaterialsNeeded.Add(new ThingDefCountClass(thingDefCountClass.thingDef, num2));
+                }
+            }
+            __result = ___cachedMaterialsNeeded;
+
+            return false;
+        }
+
+        //[HarmonyPrefix]
+        //[HarmonyPatch(typeof(Frame), nameof(Frame.MaterialsNeeded))]
+        //private static bool MaterialsNeeded(Frame __instance, ref List<ThingDefCountClass> ___cachedMaterialsNeeded, ref ThingOwner ___resourceContainer, ref List<ThingDefCountClass> __result)
+        //{
+        //    ___cachedMaterialsNeeded.Clear();
+        //    List<ThingDefCountClass> list = __instance.def.entityDefToBuild.CostListAdjusted(__instance.Stuff, true);
+        //    for (int i = 0; i < list.Count; i++)
+        //    {
+        //        ThingDefCountClass thingDefCountClass = list[i]; // Iterator.
+
+        //        int num = ___resourceContainer.TotalStackCountOfDef(thingDefCountClass.thingDef);
+        //        int num2 = thingDefCountClass.count - num;
+
+        //        if (num2 > 0 && thingDefCountClass.thingDef.IsNecessaryResourceInList(__instance.def.entityDefToBuild.costList))
+        //        {
+        //            ___cachedMaterialsNeeded.Add(new ThingDefCountClass(thingDefCountClass.thingDef, num2));
+        //        }
+        //    }
+        //    __result = ___cachedMaterialsNeeded;
+
+        //    return false;
+        //}
+
+        public static List<ThingDefCountClass> DuplicateCountClass(ThingDefCountClass countClass)
+        {
+            List<ThingDefCountClass> result = new List<ThingDefCountClass>();
+            List<ThingDef> interchangableDefs = countClass.thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().interchangableWith;
+            for (int i = 0; i < interchangableDefs.Count; i++)
+            {
+                result.Add(new ThingDefCountClass(interchangableDefs[i], countClass.count));
+            }
+
+            return result;
         }
     }
 }

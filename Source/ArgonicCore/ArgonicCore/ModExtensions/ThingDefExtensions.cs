@@ -13,4 +13,9 @@ namespace ArgonicCore.ModExtensions
         public List<ThingDefCountClass> botchProducts;
         public SkillDef skillRequirement;
     }
+
+    public class ThingDefExtension_InterchangableResource : DefModExtension
+    {
+        public List<ThingDef> interchangableWith;
+    }
 }
