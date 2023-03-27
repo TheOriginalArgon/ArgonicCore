@@ -7,6 +7,7 @@ using ArgonicCore.Comps;
 using ArgonicCore.ModExtensions;
 using HarmonyLib;
 using RimWorld;
+using RimWorld.Planet;
 using Verse;
 
 namespace ArgonicCore
@@ -204,6 +205,7 @@ namespace ArgonicCore
                 new CodeInstruction(OpCodes.Brfalse_S, jumpLabel_01),
                 new CodeInstruction(OpCodes.Ldloc_0),
                 new CodeInstruction(OpCodes.Ldloc_S, 5),
+                new CodeInstruction(OpCodes.Ldarg_0),
                 new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches_Generic), nameof(DuplicateCountClass))),
                 new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(List<ThingDefCountClass>), "AddRange"))
             };
@@ -290,16 +292,68 @@ namespace ArgonicCore
         //    return false;
         //}
 
-        public static List<ThingDefCountClass> DuplicateCountClass(ThingDefCountClass countClass)
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.GetGizmos))]
+        private static IEnumerable<Gizmo> AddMaterialSelectors(IEnumerable<Gizmo> values, Blueprint_Build __instance)
+        {
+            if (__instance.Faction == Faction.OfPlayer)
+            {
+                ThingDef thingDef;
+                if ((thingDef = __instance.def.entityDefToBuild as ThingDef) != null)
+                {
+                    List<ThingDefCountClass> duplicated = new List<ThingDefCountClass>();
+                    for (int i = 0; i < __instance.def.CostList.Count; i++)
+                    {
+                        duplicated.AddRange(DuplicateCountClass(__instance.def.costList[i], __instance.def.entityDefToBuild));
+                    }
+
+                    for (int i = 0; i < duplicated.Count; i++)
+                    {
+                        Command_Action action_material = new Command_Action
+                        {
+                            defaultLabel = "String_SelectMaterial".Translate().CapitalizeFirst(),
+                            defaultDesc = "String_SelectMaterial_desc".Translate().CapitalizeFirst(),
+                            // TODO: Icon
+                            Order = 20f,
+                            action = () =>
+                            {
+
+                            }
+                        };
+                    }
+                }
+            }
+        }
+
+        public static List<ThingDefCountClass> DuplicateCountClass(ThingDefCountClass countClass, BuildableDef buildableDef)
         {
             List<ThingDefCountClass> result = new List<ThingDefCountClass>();
-            List<ThingDef> interchangableDefs = countClass.thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().interchangableWith;
+            ThingDefExtension_InterchangableResource extension = countClass.thingDef.GetModExtension<ThingDefExtension_InterchangableResource>();
+            List<ThingDef> interchangableDefs = extension.interchangableWith;
+
+
             for (int i = 0; i < interchangableDefs.Count; i++)
             {
-                result.Add(new ThingDefCountClass(interchangableDefs[i], countClass.count));
+                if ((int)GetHigherTechLevel(buildableDef.researchPrerequisites) <= (int)extension.techLevels[i])
+                {
+                    result.Add(new ThingDefCountClass(interchangableDefs[i], countClass.count));
+                }
             }
 
             return result;
+        }
+
+        public static TechLevel GetHigherTechLevel(List<ResearchProjectDef> list)
+        {
+            if (list == null) { return TechLevel.Animal; }
+            List<int> techLevels = new List<int>();
+            for (int i = 0; i < list.Count; i++)
+            {
+                techLevels.Add((int)list[i].techLevel);
+                Log.Message("added " + list[i].techLevel.ToString());
+            }
+
+            if (techLevels.Any()) { return (TechLevel)techLevels.Max(); } else { return TechLevel.Animal; }
         }
     }
 }

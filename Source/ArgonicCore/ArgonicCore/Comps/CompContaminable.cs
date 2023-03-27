@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 using Verse;
 
 namespace ArgonicCore.Comps
@@ -60,7 +61,7 @@ namespace ArgonicCore.Comps
                         {
                             if (!compContaminable.IsContaminatedNow() && !compContaminable.IsBaseContaminator)
                             {
-                                if (Rand.Chance(0.035f))
+                                if (Rand.Chance(0.035f * Props.contaminationPower))
                                 {
                                     compContaminable.SetContaminated(BaseContaminatorHediffs);
                                 }
@@ -90,31 +91,18 @@ namespace ArgonicCore.Comps
             compContaminable.HediffsContaminedWith = HediffsContaminedWith;
         }
 
-        // DEBUG
-        //public override string CompInspectStringExtra()
-        //{
-        //    StringBuilder stringBuilder = new StringBuilder();
+        public override string CompInspectStringExtra()
+        {
+            StringBuilder stringBuilder = new StringBuilder();
 
-        //    if (IsBaseContaminator)
-        //    {
-        //        stringBuilder.Append("Contamines with:");
-        //        for (int i = 0; i < BaseContaminatorHediffs.Count; i++)
-        //        {
-        //            stringBuilder.AppendInNewLine(BaseContaminatorHediffs[i].label);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        stringBuilder.Append("Contaminated with:");
-        //        for (int i = 0; i < HediffsContaminedWith.Count; i++)
-        //        {
-        //            stringBuilder.AppendInNewLine(HediffsContaminedWith[i].label);
-        //        }
-        //    }
+            if (HediffsContaminedWith.Any())
+            {
+                stringBuilder.Append("String_Contaminated".Translate().Colorize(Color.red));
+            }
 
 
-        //    return stringBuilder.ToString();
-        //}
+            return stringBuilder.ToString();
+        }
 
     }
 
@@ -125,6 +113,8 @@ namespace ArgonicCore.Comps
         public bool contaminesProducts = true;
 
         public bool isBaseContaminator = false;
+
+        public float contaminationPower = 1f;
 
         public List<HediffDef> hediffs = new List<HediffDef>();
     }

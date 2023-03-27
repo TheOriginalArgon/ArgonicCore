@@ -8,4 +8,9 @@ namespace ArgonicCore
     {
         public List<ThingDefCountClass> Contents;
     }
+
+    public class TechLevelDef : Def
+    {
+        public List<ThingDef> thingDefs;
+    }
 }

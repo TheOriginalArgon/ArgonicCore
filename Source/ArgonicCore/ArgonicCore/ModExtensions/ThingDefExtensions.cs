@@ -17,5 +17,7 @@ namespace ArgonicCore.ModExtensions
     public class ThingDefExtension_InterchangableResource : DefModExtension
     {
         public List<ThingDef> interchangableWith;
+        public List<TechLevel> techLevels;
+        public TechLevel techLevel;
     }
 }
