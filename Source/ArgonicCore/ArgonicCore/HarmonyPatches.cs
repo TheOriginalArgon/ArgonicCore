@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Xml.XPath;
 using ArgonicCore.Comps;
 using ArgonicCore.ModExtensions;
 using HarmonyLib;
@@ -214,59 +215,12 @@ namespace ArgonicCore
             code.InsertRange(insertion_index - 4, codeToAdd);
 
             // Debug.
-            foreach (CodeInstruction i in code)
-            {
-                Log.Message("[AC] " + i.ToString());
-            }
+            //foreach (CodeInstruction i in code)
+            //{
+            //    Log.Message("[AC] " + i.ToString());
+            //}
 
             return code.AsEnumerable();
-        }
-
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(Frame), nameof(Frame.MaterialsNeeded))]
-        private static bool MaterialsNeeded(Frame __instance, ref List<ThingDefCountClass> ___cachedMaterialsNeeded, ref ThingOwner ___resourceContainer, ref List<ThingDefCountClass> __result)
-        {
-            ___cachedMaterialsNeeded.Clear();
-            List<ThingDefCountClass> list = __instance.def.entityDefToBuild.CostListAdjusted(__instance.Stuff, true);
-            for (int i = 0; i < list.Count; i++)
-            {
-                ThingDefCountClass thingDefCountClass = list[i];
-
-                int num = ___resourceContainer.TotalStackCountOfDef(thingDefCountClass.thingDef);
-
-                if (thingDefCountClass.thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
-                {
-                    List<ThingDef> interchangableDefs = thingDefCountClass.thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().interchangableWith;
-                    for (int j = 0; j < interchangableDefs.Count; j++)
-                    {
-                        num += ___resourceContainer.TotalStackCountOfDef(interchangableDefs[j]);
-                    }
-                }
-                else
-                {
-                    for (int j = 0; j < list.Count; j++)
-                    {
-                        if (list[j].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
-                        {
-                            List<ThingDef> thingDefs_compare = list[j].thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().interchangableWith;
-
-                            if (thingDefs_compare.Contains(thingDefCountClass.thingDef))
-                            {
-                                num += ___resourceContainer.TotalStackCountOfDef(list[j].thingDef);
-                            }
-                        }
-                    }
-                }
-
-                int num2 = thingDefCountClass.count - num;
-                if (num2 > 0)
-                {
-                    ___cachedMaterialsNeeded.Add(new ThingDefCountClass(thingDefCountClass.thingDef, num2));
-                }
-            }
-            __result = ___cachedMaterialsNeeded;
-
-            return false;
         }
 
         //[HarmonyPrefix]
@@ -277,12 +231,36 @@ namespace ArgonicCore
         //    List<ThingDefCountClass> list = __instance.def.entityDefToBuild.CostListAdjusted(__instance.Stuff, true);
         //    for (int i = 0; i < list.Count; i++)
         //    {
-        //        ThingDefCountClass thingDefCountClass = list[i]; // Iterator.
+        //        ThingDefCountClass thingDefCountClass = list[i];
 
         //        int num = ___resourceContainer.TotalStackCountOfDef(thingDefCountClass.thingDef);
-        //        int num2 = thingDefCountClass.count - num;
 
-        //        if (num2 > 0 && thingDefCountClass.thingDef.IsNecessaryResourceInList(__instance.def.entityDefToBuild.costList))
+        //        if (thingDefCountClass.thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
+        //        {
+        //            List<ThingDef> interchangableDefs = thingDefCountClass.thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().interchangableWith;
+        //            for (int j = 0; j < interchangableDefs.Count; j++)
+        //            {
+        //                num += ___resourceContainer.TotalStackCountOfDef(interchangableDefs[j]);
+        //            }
+        //        }
+        //        else
+        //        {
+        //            for (int j = 0; j < list.Count; j++)
+        //            {
+        //                if (list[j].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
+        //                {
+        //                    List<ThingDef> thingDefs_compare = list[j].thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().interchangableWith;
+
+        //                    if (thingDefs_compare.Contains(thingDefCountClass.thingDef))
+        //                    {
+        //                        num += ___resourceContainer.TotalStackCountOfDef(list[j].thingDef);
+        //                    }
+        //                }
+        //            }
+        //        }
+
+        //        int num2 = thingDefCountClass.count - num;
+        //        if (num2 > 0)
         //        {
         //            ___cachedMaterialsNeeded.Add(new ThingDefCountClass(thingDefCountClass.thingDef, num2));
         //        }
@@ -292,37 +270,99 @@ namespace ArgonicCore
         //    return false;
         //}
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.GetGizmos))]
-        private static IEnumerable<Gizmo> AddMaterialSelectors(IEnumerable<Gizmo> values, Blueprint_Build __instance)
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Frame), nameof(Frame.MaterialsNeeded))]
+        private static bool MaterialsNeeded(Frame __instance, ref List<ThingDefCountClass> ___cachedMaterialsNeeded, ref List<ThingDefCountClass> __result)
         {
-            if (__instance.Faction == Faction.OfPlayer)
+            ___cachedMaterialsNeeded.Clear();
+            List<ThingDefCountClass> costList = __instance.def.entityDefToBuild.CostListAdjusted(__instance.Stuff, true);
+            List<ThingDefCountClass> optionalCostList = ExtendedCostListFor(__instance.def.entityDefToBuild, false);
+
+
+            for (int i = 0; i < costList.Count; i++)
             {
-                ThingDef thingDef;
-                if ((thingDef = __instance.def.entityDefToBuild as ThingDef) != null)
+                ThingDefCountClass thingDefCountClass = costList[i];
+
+                int totalCountOfOptional = 0;
+                for (int j = 0; j < optionalCostList.Count; j++)
                 {
-                    List<ThingDefCountClass> duplicated = new List<ThingDefCountClass>();
-                    for (int i = 0; i < __instance.def.CostList.Count; i++)
+                    totalCountOfOptional += __instance.resourceContainer.TotalStackCountOfDef(optionalCostList[j].thingDef);
+                }
+
+                int num = __instance.resourceContainer.TotalStackCountOfDef(thingDefCountClass.thingDef);
+                int num2 = thingDefCountClass.count - num;
+
+                if (num2 > 0)
+                {
+                    if (!IsWithin(thingDefCountClass, optionalCostList) || (IsWithin(thingDefCountClass, optionalCostList) && num > 0))
                     {
-                        duplicated.AddRange(DuplicateCountClass(__instance.def.costList[i], __instance.def.entityDefToBuild));
+                        ___cachedMaterialsNeeded.Add(new ThingDefCountClass(thingDefCountClass.thingDef, num2));
                     }
-
-                    for (int i = 0; i < duplicated.Count; i++)
+                    if (totalCountOfOptional <= 0 && IsWithin(thingDefCountClass, optionalCostList))
                     {
-                        Command_Action action_material = new Command_Action
-                        {
-                            defaultLabel = "String_SelectMaterial".Translate().CapitalizeFirst(),
-                            defaultDesc = "String_SelectMaterial_desc".Translate().CapitalizeFirst(),
-                            // TODO: Icon
-                            Order = 20f,
-                            action = () =>
-                            {
-
-                            }
-                        };
+                        ___cachedMaterialsNeeded.Add(thingDefCountClass);
                     }
                 }
             }
+
+            //foreach (ThingDefCountClass c in ___cachedMaterialsNeeded)
+            //{
+            //    Log.Message(c.ToString());
+            //}
+
+            __result = ___cachedMaterialsNeeded;
+
+            return false;
+        }
+
+        //[HarmonyPostfix]
+        //[HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.MaterialsNeeded))]
+        //private static void MaterialsNeeded_BP(Blueprint_Build __instance, ref List<ThingDefCountClass> __result)
+        //{
+        //    foreach (ThingDefCountClass c in __result)
+        //    {
+        //        Log.Message(c.ToString());
+        //    }
+        //}
+
+        //[HarmonyPostfix]
+        //[HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.GetGizmos))]
+        //private static IEnumerable<Gizmo> AddMaterialSelectors(IEnumerable<Gizmo> values, Blueprint_Build __instance)
+        //{
+        //    if (__instance.Faction == Faction.OfPlayer)
+        //    {
+        //        ThingDef thingDef;
+        //        if ((thingDef = __instance.def.entityDefToBuild as ThingDef) != null)
+        //        {
+        //            for (int i = 0; i < OptionalCostListFor(__instance.def.entityDefToBuild).Count; i++)
+        //            {
+        //                Command_Action action_material = new Command_Action
+        //                {
+        //                    defaultLabel = "String_SelectMaterial".Translate().CapitalizeFirst(),
+        //                    defaultDesc = "String_SelectMaterial_desc".Translate().CapitalizeFirst(),
+        //                    // TODO: Icon
+        //                    Order = 20f,
+        //                    action = () =>
+        //                    {
+
+        //                    }
+        //                };
+        //            }
+        //        }
+        //    }
+        //}
+
+        public static bool IsWithin(ThingDefCountClass countClass, List<ThingDefCountClass> compare)
+        {
+            for (int i = 0; i < compare.Count; i++)
+            {
+                if (compare[i].thingDef.defName == countClass.thingDef.defName &&
+                    compare[i].count == countClass.count)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public static List<ThingDefCountClass> DuplicateCountClass(ThingDefCountClass countClass, BuildableDef buildableDef)
@@ -354,6 +394,28 @@ namespace ArgonicCore
             }
 
             if (techLevels.Any()) { return (TechLevel)techLevels.Max(); } else { return TechLevel.Animal; }
+        }
+
+        public static List<ThingDefCountClass> ExtendedCostListFor(BuildableDef buildableDef, bool notMe = true)
+        {
+            List<ThingDefCountClass> result = new List<ThingDefCountClass>();
+            List<ThingDefCountClass> thingDefsWithExtension = (from ThingDefCountClass def in buildableDef.CostList where def.thingDef.HasModExtension<ThingDefExtension_InterchangableResource>() select def).ToList();
+
+            for (int i = 0; i < thingDefsWithExtension.Count; i++)
+            {
+                ThingDefCountClass thingDefCountClass = thingDefsWithExtension[i];
+                if (!notMe)
+                {
+                    result.Add(new ThingDefCountClass(thingDefCountClass.thingDef, thingDefCountClass.count));
+                }
+
+                for (int j = 0; j < thingDefCountClass.thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().interchangableWith.Count; j++)
+                {
+                    result.Add(new ThingDefCountClass(thingDefCountClass.thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().interchangableWith[j], thingDefCountClass.count));
+                }
+            }
+
+            return result;
         }
     }
 }
