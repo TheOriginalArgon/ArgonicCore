@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using System.Xml.XPath;
 using ArgonicCore.Comps;
 using ArgonicCore.ModExtensions;
+using ArgonicCore.Utilities;
 using HarmonyLib;
 using RimWorld;
 using RimWorld.BaseGen;
@@ -219,8 +220,8 @@ namespace ArgonicCore
                 new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(List<ThingDefCountClass>), "AddRange"))
             };
 
-            code.InsertRange(insertion_index1, codeToAdd);
-            code.InsertRange(insertion_index2, codeToAdd);
+            //code.InsertRange(insertion_index1, codeToAdd);
+            //code.InsertRange(insertion_index2, codeToAdd);
             code.RemoveRange(deletion_index1, 2);
             code.RemoveRange(deletion_index2, 2);
 
@@ -233,53 +234,6 @@ namespace ArgonicCore
             return code.AsEnumerable();
         }
 
-        //[HarmonyPrefix]
-        //[HarmonyPatch(typeof(Frame), nameof(Frame.MaterialsNeeded))]
-        //private static bool MaterialsNeeded(Frame __instance, ref List<ThingDefCountClass> ___cachedMaterialsNeeded, ref ThingOwner ___resourceContainer, ref List<ThingDefCountClass> __result)
-        //{
-        //    ___cachedMaterialsNeeded.Clear();
-        //    List<ThingDefCountClass> list = __instance.def.entityDefToBuild.CostListAdjusted(__instance.Stuff, true);
-        //    for (int i = 0; i < list.Count; i++)
-        //    {
-        //        ThingDefCountClass thingDefCountClass = list[i];
-
-        //        int num = ___resourceContainer.TotalStackCountOfDef(thingDefCountClass.thingDef);
-
-        //        if (thingDefCountClass.thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
-        //        {
-        //            List<ThingDef> interchangableDefs = thingDefCountClass.thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().interchangableWith;
-        //            for (int j = 0; j < interchangableDefs.Count; j++)
-        //            {
-        //                num += ___resourceContainer.TotalStackCountOfDef(interchangableDefs[j]);
-        //            }
-        //        }
-        //        else
-        //        {
-        //            for (int j = 0; j < list.Count; j++)
-        //            {
-        //                if (list[j].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
-        //                {
-        //                    List<ThingDef> thingDefs_compare = list[j].thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().interchangableWith;
-
-        //                    if (thingDefs_compare.Contains(thingDefCountClass.thingDef))
-        //                    {
-        //                        num += ___resourceContainer.TotalStackCountOfDef(list[j].thingDef);
-        //                    }
-        //                }
-        //            }
-        //        }
-
-        //        int num2 = thingDefCountClass.count - num;
-        //        if (num2 > 0)
-        //        {
-        //            ___cachedMaterialsNeeded.Add(new ThingDefCountClass(thingDefCountClass.thingDef, num2));
-        //        }
-        //    }
-        //    __result = ___cachedMaterialsNeeded;
-
-        //    return false;
-        //}
-
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Frame), nameof(Frame.MaterialsNeeded))]
         private static bool MaterialsNeeded(Frame __instance, ref List<ThingDefCountClass> ___cachedMaterialsNeeded, ref List<ThingDefCountClass> __result)
@@ -287,7 +241,7 @@ namespace ArgonicCore
             List<ThingDefCountClass> baseCostList = __instance.def.entityDefToBuild.CostListAdjusted(__instance.Stuff, true);
             ThingDefCountClass stuff = baseCostList[baseCostList.Count - 1];
             Log.Message("[AC]Stuff: " + stuff.ToString());
-            List<List<ThingDefCountClass>> interchangableGroups = DivideByGroups(baseCostList);
+            List<List<ThingDefCountClass>> interchangableGroups = DivideByGroups(baseCostList, __instance.def.entityDefToBuild);
             int amountToSubstractFromStuff = FindStuffDuplicate(__instance.Stuff, interchangableGroups);
             Log.Message("[AC]Substract " + amountToSubstractFromStuff + " from stuff count");
 
@@ -342,79 +296,72 @@ namespace ArgonicCore
                 Log.Message("[AC]Holding: " + __instance.resourceContainer.TotalStackCountOfDef(c.thingDef) + c.thingDef.ToString());
             }
             return false;
-
-            //List<ThingDefCountClass> costList = __instance.def.entityDefToBuild.CostListAdjusted(__instance.Stuff, true);
-            //List<ThingDefCountClass> optionalCostList = ExtendedCostListFor(__instance.def.entityDefToBuild, false);
-
-            //bool hasDuplicatedMaterials = false;
-            //for (int i = 0; i < ___cachedMaterialsNeeded.Count - 1; i++)
-            //{
-            //    if (___cachedMaterialsNeeded[i].thingDef == __instance.Stuff) { hasDuplicatedMaterials = true; Log.Message("Has duplicated"); }
-            //}
-            //___cachedMaterialsNeeded.Clear();
-
-
-
-            //for (int i = 0; i < costList.Count; i++)
-            //{
-            //    ThingDefCountClass thingDefCountClass = costList[i];
-
-            //    int auxSubstractValue = 0;
-            //    if (hasDuplicatedMaterials)
-            //    {
-            //        auxSubstractValue = optionalCostList[0].count;
-            //    }
-
-            //    //int stuffCount = Mathf.RoundToInt(__instance.def.entityDefToBuild.CostStuffCount / __instance.Stuff.VolumePerUnit);
-            //    //if (stuffCount < 1) { stuffCount = 1; }
-
-            //    int totalCountOfOptional = 0;
-            //    if (i != costList.Count - 1)
-            //    {
-            //        for (int j = 0; j < optionalCostList.Count; j++)
-            //        {
-            //            totalCountOfOptional += __instance.resourceContainer.TotalStackCountOfDef(optionalCostList[j].thingDef);
-            //        }
-            //    }
-
-            //    int num = 0;
-            //    if (i == costList.Count - 1 && thingDefCountClass.thingDef == __instance.Stuff)
-            //    {
-            //        num = __instance.resourceContainer.TotalStackCountOfDef(thingDefCountClass.thingDef) - auxSubstractValue;
-            //        if (num < 0) { num = 0; }
-            //    }
-            //    else
-            //    {
-            //        num = __instance.resourceContainer.TotalStackCountOfDef(thingDefCountClass.thingDef);
-            //    }
-            //    int num2 = thingDefCountClass.count - num;
-
-            //    if (num2 > 0)
-            //    {
-            //        if (i == costList.Count - 1 || (!IsWithin(thingDefCountClass, optionalCostList) || (IsWithin(thingDefCountClass, optionalCostList) && num > 0)))
-            //        {
-            //            ___cachedMaterialsNeeded.Add(new ThingDefCountClass(thingDefCountClass.thingDef, num2));
-            //        }
-            //        if (totalCountOfOptional <= 0 && IsWithin(thingDefCountClass, optionalCostList))
-            //        {
-            //            ___cachedMaterialsNeeded.Add(thingDefCountClass);
-            //        }
-            //    }
-
-            //    Log.Message("[AC]Holding: " + __instance.resourceContainer.TotalStackCountOfDef(thingDefCountClass.thingDef).ToString() + " " + thingDefCountClass.thingDef);
-            //}
-
-            //foreach (ThingDefCountClass c in ___cachedMaterialsNeeded)
-            //{
-            //    Log.Message("[AC]Waiting for: " + c.ToString());
-            //}
-
-            //__result = ___cachedMaterialsNeeded;
-
-            //return false;
         }
 
-        private static List<List<ThingDefCountClass>> DivideByGroups(List<ThingDefCountClass> list)
+        //private int ExtraCostForIngredient(ThingDefCountClass countClass)
+        //{
+
+        //}
+
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.MaterialsNeeded))]
+        private static bool MaterialsNeeded_Blueprint(Blueprint_Build __instance, ref List<ThingDefCountClass> __result)
+        {
+            if (!__result.Any(d => d.thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())) { return true; }
+
+            // Return the costlist with generic materials
+            bool usesStuff = __instance.Stuff != null;
+            int numStuff = usesStuff ? 1 : 0;
+
+            for (int i = 0; i < __result.Count; i++)
+            {
+                if (__result[i].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
+                {
+                    //__result[i].thingDef = __instance.GetActiveOptionalMaterials();
+                }
+            }
+
+            return false;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.GetGizmos))]
+        private static IEnumerable<Gizmo> AddMaterialSelectors(IEnumerable<Gizmo> values, Blueprint_Build __instance)
+        {
+            foreach (Gizmo gizmo in values) { yield return gizmo; }
+
+            List<List<ThingDefCountClass>> exchangeableGroups = DivideByGroups(__instance.def.entityDefToBuild.CostListAdjusted(__instance.stuffToUse, true), __instance.def.entityDefToBuild);
+            if (__instance.Faction == Faction.OfPlayer)
+            {
+                for (int i = 0; i < exchangeableGroups.Count; i++)
+                {
+                    yield return MaterialExchangingUtility.SelectMaterialCommand(__instance, __instance.Map, exchangeableGroups[i], i);
+                }
+            }
+        }
+
+        private static List<ThingDefCountClass> GetActiveMaterialCostList(List<ThingDefCountClass> costList, List<List<ThingDefCountClass>> groups, List<ThingDef> activeMaterials)
+        {
+            List<ThingDefCountClass> result = new List<ThingDefCountClass>();
+
+            for (int i = 0; i < costList.Count - 1; i++)
+            {
+                if (!costList[i].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
+                {
+                    result.Add(costList[i]);
+                }
+            }
+            for (int i = 0; i < groups.Count - 1; i++)
+            {
+                result.Add(new ThingDefCountClass(activeMaterials[i], groups[i][0].count));
+            }
+
+            result.Add(costList[costList.Count - 1]);
+            return result;
+        }
+
+        private static List<List<ThingDefCountClass>> DivideByGroups(List<ThingDefCountClass> list, BuildableDef buildableDef)
         {
             List<List<ThingDefCountClass>> result = new List<List<ThingDefCountClass>>();
             for (int i = 0; i < list.Count - 1; i++)
@@ -427,7 +374,10 @@ namespace ArgonicCore
                     thingDefCounts.Add(list[i]);
                     for (int j = 0; j < extension.interchangableWith.Count; j++)
                     {
-                        thingDefCounts.Add(new ThingDefCountClass(extension.interchangableWith[j], list[i].count));
+                        if ((int)GetHigherTechLevel(buildableDef.researchPrerequisites) <= (int)extension.techLevels[j])
+                        {
+                            thingDefCounts.Add(new ThingDefCountClass(extension.interchangableWith[j], list[i].count));
+                        }
                     }
                     result.Add(thingDefCounts);
                 }
@@ -453,43 +403,6 @@ namespace ArgonicCore
 
             return 0;
         }
-
-        //[HarmonyPostfix]
-        //[HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.MaterialsNeeded))]
-        //private static void MaterialsNeeded_BP(Blueprint_Build __instance, ref List<ThingDefCountClass> __result)
-        //{
-        //    foreach (ThingDefCountClass c in __result)
-        //    {
-        //        Log.Message(c.ToString());
-        //    }
-        //}
-
-        //[HarmonyPostfix]
-        //[HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.GetGizmos))]
-        //private static IEnumerable<Gizmo> AddMaterialSelectors(IEnumerable<Gizmo> values, Blueprint_Build __instance)
-        //{
-        //    if (__instance.Faction == Faction.OfPlayer)
-        //    {
-        //        ThingDef thingDef;
-        //        if ((thingDef = __instance.def.entityDefToBuild as ThingDef) != null)
-        //        {
-        //            for (int i = 0; i < OptionalCostListFor(__instance.def.entityDefToBuild).Count; i++)
-        //            {
-        //                Command_Action action_material = new Command_Action
-        //                {
-        //                    defaultLabel = "String_SelectMaterial".Translate().CapitalizeFirst(),
-        //                    defaultDesc = "String_SelectMaterial_desc".Translate().CapitalizeFirst(),
-        //                    // TODO: Icon
-        //                    Order = 20f,
-        //                    action = () =>
-        //                    {
-
-        //                    }
-        //                };
-        //            }
-        //        }
-        //    }
-        //}
 
         public static bool IsWithin(ThingDefCountClass countClass, List<ThingDefCountClass> compare)
         {

@@ -18,6 +18,7 @@ namespace ArgonicCore.ModExtensions
     {
         public List<ThingDef> interchangableWith;
         public List<TechLevel> techLevels;
-        public TechLevel techLevel;
+        public List<float> costModifiers;
+        public ThingDef genericThingDef;
     }
 }
