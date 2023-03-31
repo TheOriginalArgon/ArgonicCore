@@ -19,6 +19,20 @@ namespace ArgonicCore.ModExtensions
         public List<ThingDef> interchangableWith;
         public List<TechLevel> techLevels;
         public List<float> costModifiers;
-        public ThingDef genericThingDef;
+        public ThingDef defaultThingDef;
+
+        public List<ThingDef> MaterialsByTechLevel(TechLevel techLevel)
+        {
+            List<ThingDef> ret = new List<ThingDef>();
+            for (int i = 0; i < interchangableWith.Count; i++)
+            {
+                if ((int)techLevels[i] >= (int)techLevel)
+                {
+                    ret.Add(interchangableWith[i]);
+                }
+            }
+            ret.Add(defaultThingDef);
+            return ret;
+        }
     }
 }

@@ -25,6 +25,43 @@ namespace ArgonicCore.Utilities
             };
         }
 
+        // Utility methods
+
+        public static TechLevel GetHigherTechLevel(List<ResearchProjectDef> list)
+        {
+            if (list.NullOrEmpty()) { Log.Message("[AC]Max tech level: Animal"); return TechLevel.Animal; }
+            List<int> techLevels = new List<int>();
+            for (int i = 0; i < list.Count; i++)
+            {
+                techLevels.Add((int)list[i].techLevel);
+            }
+
+            if (techLevels.Any())
+            {
+                Log.Message("[AC]Max tech level: " + (TechLevel)techLevels.Max());
+                return (TechLevel)techLevels.Max();
+            }
+            else
+            {
+                Log.Message("[AC]Max tech level: Animal");
+                return TechLevel.Animal;
+            }
+        }
+
+        public static List<ThingDef> GetMaterialsByTechLevel(ThingDef def, TechLevel max)
+        {
+            List<ThingDef> materials = new List<ThingDef>();
+            ThingDefExtension_InterchangableResource extension = def.GetModExtension<ThingDefExtension_InterchangableResource>();
+            for (int i = 0; i < extension.interchangableWith.Count; i++)
+            {
+                if ((int)extension.techLevels[i] >= (int)max)
+                {
+                    materials.Add(extension.interchangableWith[i]);
+                }
+            }
+            return materials;
+        }
+
         // Extension methods
 
         public static ThingDef GetActiveOptionalMaterialFor(this Thing blueprint, ThingDef material)
@@ -46,7 +83,7 @@ namespace ArgonicCore.Utilities
             {
                 Log.Error("It's here! " + e.InnerException);
             }
-            return material.GetModExtension<ThingDefExtension_InterchangableResource>().genericThingDef;
+            return material.GetModExtension<ThingDefExtension_InterchangableResource>().defaultThingDef;
         }
 
         public static void SetActiveOptionalMaterialFor(this Thing blueprint, ThingDef material, ThingDef replacement)

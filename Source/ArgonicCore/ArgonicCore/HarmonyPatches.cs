@@ -278,29 +278,18 @@ namespace ArgonicCore
 
             if (__instance.Faction == Faction.OfPlayer)
             {
-                for (int i = 0; i < costList.Count; i++)
+                int stuffNum = __instance.Stuff == null ? 0 : 1;
+                for (int i = 0; i < costList.Count - stuffNum; i++)
                 {
                     if (costList[i].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
                     {
+                        TechLevel techLevel = MaterialExchangingUtility.GetHigherTechLevel(__instance.def.entityDefToBuild.researchPrerequisites);
                         ThingDefExtension_InterchangableResource extension = costList[i].thingDef.GetModExtension<ThingDefExtension_InterchangableResource>();
-                        yield return MaterialExchangingUtility.SelectMaterialCommand(__instance, __instance.Map, costList[i].thingDef, extension.interchangableWith);
+                        yield return MaterialExchangingUtility.SelectMaterialCommand(__instance, __instance.Map, costList[i].thingDef, extension.MaterialsByTechLevel(techLevel));
                     }
                 }
             }
             yield break;
-        }
-
-        public static TechLevel GetHigherTechLevel(List<ResearchProjectDef> list)
-        {
-            if (list == null) { return TechLevel.Animal; }
-            List<int> techLevels = new List<int>();
-            for (int i = 0; i < list.Count; i++)
-            {
-                techLevels.Add((int)list[i].techLevel);
-                Log.Message("added " + list[i].techLevel.ToString());
-            }
-
-            if (techLevels.Any()) { return (TechLevel)techLevels.Max(); } else { return TechLevel.Animal; }
         }
     }
 }
