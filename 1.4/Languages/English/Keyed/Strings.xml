@@ -5,5 +5,7 @@
     <String_CrateContentUnknown>Unknown</String_CrateContentUnknown>
     <String_Contaminated>Contaminated</String_Contaminated>
 
+    <AC_MaterialTo>Use {0}.</AC_MaterialTo>
+
 
 </LanguageData>

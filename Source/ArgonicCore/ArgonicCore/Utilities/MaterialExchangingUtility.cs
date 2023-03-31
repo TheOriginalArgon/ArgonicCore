@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ArgonicCore.Commands;
 using ArgonicCore.GameComponents;
+using ArgonicCore.ModExtensions;
 using RimWorld;
 using Verse;
 
@@ -12,37 +13,73 @@ namespace ArgonicCore.Utilities
 {
     public static class MaterialExchangingUtility
     {
-        public static Command_SelectMaterial SelectMaterialCommand(Blueprint_Build passingBlueprint, Map passingMap, List<ThingDefCountClass> materialGroup, int groupIndex)
+        public static Command_SelectMaterial SelectMaterialCommand(Thing passingThing, Map passingMap, ThingDef material, List<ThingDef> options)
         {
             return new Command_SelectMaterial
             {
                 defaultDesc = "AC_SelectMaterial".Translate(),
                 map = passingMap,
-                blueprint = passingBlueprint,
-                materialGroup = materialGroup,
-                groupIndex = groupIndex
+                thing = passingThing,
+                material = material,
+                options = options
             };
         }
 
         // Extension methods
 
-        public static List<ThingDef> GetActiveOptionalMaterials(this Blueprint_Build blueprint)
+        public static ThingDef GetActiveOptionalMaterialFor(this Thing blueprint, ThingDef material)
         {
-            List<ThingDef> materials = new List<ThingDef>();
-            if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(blueprint, out materials))
+            if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(blueprint, out Dictionary<ThingDef, ThingDef> materialInUse))
             {
-                return materials;
+                foreach (KeyValuePair<ThingDef, ThingDef> pair in materialInUse)
+                {
+                    if (pair.Key == material)
+                    {
+                        return pair.Value;
+                    }
+                }
+            }
+            return material.GetModExtension<ThingDefExtension_InterchangableResource>().genericThingDef;
+        }
+
+        public static void SetActiveOptionalMaterialFor(this Thing blueprint, ThingDef material, ThingDef replacement)
+        {
+            if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.ContainsKey(blueprint))
+            {
+                if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse[blueprint].ContainsKey(material))
+                {
+                    GameComponent_ExtendedThings.Instance.optionalMaterialInUse[blueprint][material] = replacement;
+                }
+                else
+                {
+                    GameComponent_ExtendedThings.Instance.optionalMaterialInUse[blueprint].Add(material, replacement);
+                }
+            }
+            else
+            {
+                GameComponent_ExtendedThings.Instance.optionalMaterialInUse.Add(blueprint, new Dictionary<ThingDef, ThingDef>() { { material, replacement } });
+            }
+        }
+
+        public static Dictionary<ThingDef, ThingDef> TryGetMaterialValues(this Thing thing)
+        {
+            if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(thing, out Dictionary<ThingDef, ThingDef> dict))
+            {
+                return dict;
             }
             return null;
         }
 
-        public static void SetActiveOptionalMaterial(this Blueprint_Build blueprint, ThingDef material, int index)
+        public static void SetMaterialValues(this Thing thing, Dictionary<ThingDef, ThingDef> values)
         {
-            if (!GameComponent_ExtendedThings.Instance.optionalMaterialInUse.ContainsKey(blueprint))
+            if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(thing, out Dictionary<ThingDef, ThingDef> dict))
             {
-                GameComponent_ExtendedThings.Instance.optionalMaterialInUse.Add(blueprint, new List<ThingDef>() { null, null });
+                GameComponent_ExtendedThings.Instance.optionalMaterialInUse[thing] = values;
             }
-            GameComponent_ExtendedThings.Instance.optionalMaterialInUse[blueprint][index] = material;
+            else
+            {
+                GameComponent_ExtendedThings.Instance.optionalMaterialInUse.Add(thing, values);
+            }
         }
     }
 }

@@ -12,29 +12,38 @@ namespace ArgonicCore.Commands
 {
     public class Command_SelectMaterial : Command
     {
-        public Blueprint_Build blueprint;
+        public Thing thing;
         public Map map;
-        public List<ThingDefCountClass> materialGroup;
-        public int groupIndex;
+        public ThingDef material;
+        public List<ThingDef> options;
 
         public override void ProcessInput(Event ev)
         {
             base.ProcessInput(ev);
             List<FloatMenuOption> list = new List<FloatMenuOption>();
 
-            for (int i = 0; i < materialGroup.Count; i++)
+            for (int i = 0; i < options.Count; i++)
             {
-                list.Add(new FloatMenuOption("AC_MaterialTo".Translate(materialGroup[i].thingDef.label), delegate ()
+                ThingDef thisOption = options[i];
+                list.Add(new FloatMenuOption("AC_MaterialTo".Translate(options[i].label), () =>
                 {
-                    SetMaterial(materialGroup[i].thingDef);
+                    try
+                    {
+                        SetMaterialForThisBlueprint(material, thisOption);
+                        icon = thisOption.uiIcon;
+                    }
+                    catch
+                    {
+                        Log.Error("This is not working... for some reason... contact Argón immediately if you see this.");
+                    }
                 }, MenuOptionPriority.Default, null, null, 29f, null, null, true, 0));
                 Find.WindowStack.Add(new FloatMenu(list));
             }
         }
 
-        public void SetMaterial(ThingDef material)
+        public void SetMaterialForThisBlueprint(ThingDef material, ThingDef replacement)
         {
-            blueprint.SetActiveOptionalMaterial(material, groupIndex);
+            thing.SetActiveOptionalMaterialFor(material, replacement);
         }
     }
 }
