@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
-using System.Xml.XPath;
 using ArgonicCore.Comps;
 using ArgonicCore.ModExtensions;
 using ArgonicCore.Utilities;
 using HarmonyLib;
 using RimWorld;
-using RimWorld.BaseGen;
-using RimWorld.Planet;
-using UnityEngine;
 using Verse;
 
 namespace ArgonicCore

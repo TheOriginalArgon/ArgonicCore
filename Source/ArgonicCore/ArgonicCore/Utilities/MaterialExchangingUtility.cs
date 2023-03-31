@@ -29,15 +29,22 @@ namespace ArgonicCore.Utilities
 
         public static ThingDef GetActiveOptionalMaterialFor(this Thing blueprint, ThingDef material)
         {
-            if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(blueprint, out Dictionary<ThingDef, ThingDef> materialInUse))
+            try
             {
-                foreach (KeyValuePair<ThingDef, ThingDef> pair in materialInUse)
+                if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(blueprint, out Dictionary<ThingDef, ThingDef> materialInUse))
                 {
-                    if (pair.Key == material)
+                    foreach (KeyValuePair<ThingDef, ThingDef> pair in materialInUse)
                     {
-                        return pair.Value;
+                        if (pair.Key == material)
+                        {
+                            return pair.Value;
+                        }
                     }
                 }
+            }
+            catch (NullReferenceException e)
+            {
+                Log.Error("It's here! " + e.InnerException);
             }
             return material.GetModExtension<ThingDefExtension_InterchangableResource>().genericThingDef;
         }
@@ -67,7 +74,7 @@ namespace ArgonicCore.Utilities
             {
                 return dict;
             }
-            return null;
+            return new Dictionary<ThingDef, ThingDef>();
         }
 
         public static void SetMaterialValues(this Thing thing, Dictionary<ThingDef, ThingDef> values)

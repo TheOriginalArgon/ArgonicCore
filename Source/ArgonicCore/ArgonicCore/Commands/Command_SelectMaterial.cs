@@ -30,7 +30,7 @@ namespace ArgonicCore.Commands
                     try
                     {
                         SetMaterialForThisBlueprint(material, thisOption);
-                        icon = thisOption.uiIcon;
+                        icon = thisOption.uiIcon; // TODO
                     }
                     catch
                     {
