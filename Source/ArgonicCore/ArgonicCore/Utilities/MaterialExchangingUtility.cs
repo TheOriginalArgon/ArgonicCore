@@ -7,6 +7,7 @@ using ArgonicCore.Commands;
 using ArgonicCore.GameComponents;
 using ArgonicCore.ModExtensions;
 using RimWorld;
+using RimWorld.Planet;
 using Verse;
 
 namespace ArgonicCore.Utilities
@@ -18,10 +19,12 @@ namespace ArgonicCore.Utilities
             return new Command_SelectMaterial
             {
                 defaultDesc = "AC_SelectMaterial".Translate(),
+                defaultLabel = "AC_MaterialUsing".Translate(passingThing.GetActiveOptionalMaterialFor(material).label),
                 map = passingMap,
                 thing = passingThing,
                 material = material,
-                options = options
+                options = options,
+                icon = Widgets.GetIconFor(passingThing.GetActiveOptionalMaterialFor(material))
             };
         }
 
@@ -29,7 +32,7 @@ namespace ArgonicCore.Utilities
 
         public static TechLevel GetHigherTechLevel(List<ResearchProjectDef> list)
         {
-            if (list.NullOrEmpty()) { Log.Message("[AC]Max tech level: Animal"); return TechLevel.Animal; }
+            if (list.NullOrEmpty()) { return TechLevel.Animal; }
             List<int> techLevels = new List<int>();
             for (int i = 0; i < list.Count; i++)
             {
@@ -38,28 +41,32 @@ namespace ArgonicCore.Utilities
 
             if (techLevels.Any())
             {
-                Log.Message("[AC]Max tech level: " + (TechLevel)techLevels.Max());
                 return (TechLevel)techLevels.Max();
             }
             else
             {
-                Log.Message("[AC]Max tech level: Animal");
                 return TechLevel.Animal;
             }
         }
 
-        public static List<ThingDef> GetMaterialsByTechLevel(ThingDef def, TechLevel max)
+        public static List<ThingDefCountClass> GetCustomCostList(List<ThingDefCountClass> list, Thing callingThing)
         {
-            List<ThingDef> materials = new List<ThingDef>();
-            ThingDefExtension_InterchangableResource extension = def.GetModExtension<ThingDefExtension_InterchangableResource>();
-            for (int i = 0; i < extension.interchangableWith.Count; i++)
+            List<ThingDefCountClass> result = new List<ThingDefCountClass>();
+
+            for (int i = 0; i < list.Count; i++)
             {
-                if ((int)extension.techLevels[i] >= (int)max)
+                ThingDefCountClass thingDefCountClass = list[i];
+                if (thingDefCountClass.thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
                 {
-                    materials.Add(extension.interchangableWith[i]);
+                    result.Add(new ThingDefCountClass(callingThing.GetActiveOptionalMaterialFor(thingDefCountClass.thingDef), thingDefCountClass.count));
+                }
+                else
+                {
+                    result.Add(thingDefCountClass);
                 }
             }
-            return materials;
+
+            return result;
         }
 
         // Extension methods

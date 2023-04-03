@@ -6,6 +6,8 @@
     <String_Contaminated>Contaminated</String_Contaminated>
 
     <AC_MaterialTo>Use {0}.</AC_MaterialTo>
+    <AC_MaterialUsing>Build with {0}.</AC_MaterialUsing>
+    <AC_SelectMaterial>Select material</AC_SelectMaterial>
 
 
 </LanguageData>

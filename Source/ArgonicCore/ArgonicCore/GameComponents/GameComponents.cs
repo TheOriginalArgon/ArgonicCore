@@ -42,10 +42,32 @@ namespace ArgonicCore.GameComponents
             if (optionalMaterialInUse == null) { optionalMaterialInUse = new Dictionary<Thing, Dictionary<ThingDef, ThingDef>>(); }
         }
 
+        public override void GameComponentTick()
+        {
+            base.GameComponentTick();
+            if (Find.TickManager.TicksGame % 2000 == 0)
+            {
+                TryClearDictionary();
+            }
+        }
+
         public override void ExposeData()
         {
             base.ExposeData();
             Scribe_Collections.Look(ref optionalMaterialInUse, "optionalMaterialInUse", LookMode.Reference, LookMode.Reference);
+        }
+
+        private void TryClearDictionary()
+        {
+            foreach (KeyValuePair<Thing, Dictionary<ThingDef, ThingDef>> pair in optionalMaterialInUse)
+            {
+                if (pair.Key == null || pair.Key.Destroyed)
+                {
+                    optionalMaterialInUse.Remove(pair.Key);
+                    Log.Message("Discarded " + pair.Key.ToString() + ". No longer exists.");
+                    break;
+                }
+            }
         }
     }
 }

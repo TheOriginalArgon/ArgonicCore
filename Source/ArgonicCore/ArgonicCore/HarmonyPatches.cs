@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Reflection.Emit;
 using ArgonicCore.Comps;
@@ -178,6 +179,49 @@ namespace ArgonicCore
             code.RemoveRange(deletion_index2, 2);
 
             return code.AsEnumerable();
+        }
+
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(Frame), nameof(Frame.CompleteConstruction))]
+        private static IEnumerable<CodeInstruction> AddMaterialsForThing(IEnumerable<CodeInstruction> instructions)
+        {
+            bool flag1 = false;
+            foreach (CodeInstruction instruction in instructions)
+            {
+                yield return instruction;
+
+                if (instruction.Calls(AccessTools.Method(typeof(ThingMaker), nameof(ThingMaker.MakeThing))))
+                {
+                    flag1 = true;
+                    continue;
+                }
+                if (flag1)
+                {
+                    yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.TryGetMaterialValues)));
+                    yield return new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.SetMaterialValues)));
+                    flag1 = false;
+                }
+            }
+        }
+
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(GenLeaving), nameof(GenLeaving.DoLeavingsFor), new Type[] { typeof(Thing), typeof(Map), typeof(DestroyMode), typeof(CellRect), typeof(Predicate<IntVec3>), typeof(List<Thing>) })]
+        private static IEnumerable<CodeInstruction> ReturnProperMaterials(IEnumerable<CodeInstruction> instructions)
+        {
+            foreach (CodeInstruction instruction in instructions)
+            {
+                yield return instruction;
+
+                if (instruction.Calls(AccessTools.Method(typeof(CostListCalculator), nameof(CostListCalculator.CostListAdjusted), new Type[] { typeof(Thing) })))
+                {
+                    yield return new CodeInstruction(OpCodes.Stloc_S, 12);
+                    yield return new CodeInstruction(OpCodes.Ldloc_S, 12);
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.GetCustomCostList)));
+                }
+            }
         }
 
         [HarmonyPostfix]
