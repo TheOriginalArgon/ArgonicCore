@@ -30,5 +30,15 @@ namespace ArgonicCore.ModExtensions
             ret.Add(defaultThingDef);
             return ret;
         }
+
+        public float CostModifierFor(ThingDef material)
+        {
+            if (!interchangableWith.Contains(material)) { return 1f; }
+            else
+            {
+                int index = interchangableWith.IndexOf(material);
+                return costModifiers[index];
+            }
+        }
     }
 }

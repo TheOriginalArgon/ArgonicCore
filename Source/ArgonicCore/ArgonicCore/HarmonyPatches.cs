@@ -8,6 +8,7 @@ using ArgonicCore.ModExtensions;
 using ArgonicCore.Utilities;
 using HarmonyLib;
 using RimWorld;
+using UnityEngine;
 using Verse;
 
 namespace ArgonicCore
@@ -148,6 +149,7 @@ namespace ArgonicCore
 
         // Patches for interchangable stuff.
 
+        // Do not merge the costlist when stuff matches other resources.
         [HarmonyTranspiler]
         [HarmonyPatch(typeof(CostListCalculator), nameof(CostListCalculator.CostListAdjusted), new[] { typeof(BuildableDef), typeof(ThingDef), typeof(bool) })]
         private static IEnumerable<CodeInstruction> AddInterchangableResources(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
@@ -181,6 +183,7 @@ namespace ArgonicCore
             return code.AsEnumerable();
         }
 
+        // Pass the replacement material values to the finished Building once the Frame is completed.
         [HarmonyTranspiler]
         [HarmonyPatch(typeof(Frame), nameof(Frame.CompleteConstruction))]
         private static IEnumerable<CodeInstruction> AddMaterialsForThing(IEnumerable<CodeInstruction> instructions)
@@ -206,6 +209,7 @@ namespace ArgonicCore
             }
         }
 
+        // Upon destruction, spawn the materials thos Building was built with.
         [HarmonyTranspiler]
         [HarmonyPatch(typeof(GenLeaving), nameof(GenLeaving.DoLeavingsFor), new Type[] { typeof(Thing), typeof(Map), typeof(DestroyMode), typeof(CellRect), typeof(Predicate<IntVec3>), typeof(List<Thing>) })]
         private static IEnumerable<CodeInstruction> ReturnProperMaterials(IEnumerable<CodeInstruction> instructions)
@@ -224,6 +228,7 @@ namespace ArgonicCore
             }
         }
 
+        // Once a Blueprint is turned into a Frame, pass the corresponding replacement materials to it.
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Blueprint_Build), "MakeSolidThing")]
         private static void MakeFrame(Blueprint_Build __instance, ref Thing __result)
@@ -231,6 +236,7 @@ namespace ArgonicCore
             __result.SetMaterialValues(__instance.TryGetMaterialValues());
         }
 
+        // Request the replacement materials (Frame).
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Frame), nameof(Frame.MaterialsNeeded))]
         private static bool MaterialsNeeded(Frame __instance, ref List<ThingDefCountClass> ___cachedMaterialsNeeded, ref List<ThingDefCountClass> __result)
@@ -245,8 +251,9 @@ namespace ArgonicCore
                 int num2;
                 if (thingDefCountClass.thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
                 {
-                    num = __instance.resourceContainer.TotalStackCountOfDef(__instance.GetActiveOptionalMaterialFor(thingDefCountClass.thingDef));
-                    num2 = thingDefCountClass.count - num;
+                    ThingDef optionalMaterial = __instance.GetActiveOptionalMaterialFor(thingDefCountClass.thingDef);
+                    num = __instance.resourceContainer.TotalStackCountOfDef(optionalMaterial);
+                    num2 = Mathf.RoundToInt(thingDefCountClass.count * thingDefCountClass.thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().CostModifierFor(optionalMaterial)) - num;
                     if (num2 > 0)
                     {
                         ___cachedMaterialsNeeded.Add(new ThingDefCountClass(__instance.GetActiveOptionalMaterialFor(thingDefCountClass.thingDef), num2));
@@ -284,7 +291,7 @@ namespace ArgonicCore
             return false;
         }
 
-
+        // Request the replacement materials (Blueprint).
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.MaterialsNeeded))]
         private static bool MaterialsNeeded_Blueprint(Blueprint_Build __instance, ref List<ThingDefCountClass> __result)
@@ -302,7 +309,8 @@ namespace ArgonicCore
             {
                 if (costList[i].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
                 {
-                    __result.Add(new ThingDefCountClass(__instance.GetActiveOptionalMaterialFor(costList[i].thingDef), costList[i].count));
+                    ThingDef optionalMaterial = __instance.GetActiveOptionalMaterialFor(costList[i].thingDef);
+                    __result.Add(new ThingDefCountClass(optionalMaterial, Mathf.RoundToInt(costList[i].count * costList[i].thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().CostModifierFor(optionalMaterial))));
                 }
                 else
                 {
@@ -313,6 +321,7 @@ namespace ArgonicCore
             return false;
         }
 
+        // Add the material selectors for Blueprints that have exchangeable materials.
         [HarmonyPostfix]
         [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.GetGizmos))]
         private static IEnumerable<Gizmo> AddMaterialSelectors(IEnumerable<Gizmo> values, Blueprint_Build __instance)
