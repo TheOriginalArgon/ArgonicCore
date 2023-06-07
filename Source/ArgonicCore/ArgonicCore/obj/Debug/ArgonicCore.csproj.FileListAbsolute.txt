@@ -2,4 +2,3 @@ C:\Steam\steamapps\common\RimWorld\Mods\ArgonicCore\1.4\Assemblies\ArgonicCore.d
 C:\Steam\steamapps\common\RimWorld\Mods\ArgonicCore\Source\ArgonicCore\ArgonicCore\obj\Debug\ArgonicCore.csproj.AssemblyReference.cache
 C:\Steam\steamapps\common\RimWorld\Mods\ArgonicCore\Source\ArgonicCore\ArgonicCore\obj\Debug\ArgonicCore.csproj.CoreCompileInputs.cache
 C:\Steam\steamapps\common\RimWorld\Mods\ArgonicCore\Source\ArgonicCore\ArgonicCore\obj\Debug\ArgonicCore.dll
-C:\Steam\steamapps\common\RimWorld\Mods\ArgonicCore\Source\ArgonicCore\ArgonicCore\obj\Debug\ArgonicCore.csproj.CopyComplete
