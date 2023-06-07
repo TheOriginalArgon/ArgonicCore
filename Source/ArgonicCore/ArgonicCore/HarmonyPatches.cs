@@ -209,7 +209,7 @@ namespace ArgonicCore
             }
         }
 
-        // Upon destruction, spawn the materials thos Building was built with.
+        // Upon destruction, spawn the materials this Building was built with.
         [HarmonyTranspiler]
         [HarmonyPatch(typeof(GenLeaving), nameof(GenLeaving.DoLeavingsFor), new Type[] { typeof(Thing), typeof(Map), typeof(DestroyMode), typeof(CellRect), typeof(Predicate<IntVec3>), typeof(List<Thing>) })]
         private static IEnumerable<CodeInstruction> ReturnProperMaterials(IEnumerable<CodeInstruction> instructions)
@@ -343,6 +343,30 @@ namespace ArgonicCore
                 }
             }
             yield break;
+        }
+
+        // Recipe extension to add hediff upon finish.
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(GenRecipe), nameof(GenRecipe.MakeRecipeProducts))]
+        private static void AddHediffPostRecipeCompletion(RecipeDef recipeDef, Pawn worker)
+        {
+            if (recipeDef != null && recipeDef.HasModExtension<RecipeDefExtension_HediffOnFinish>())
+            {
+                RecipeDefExtension_HediffOnFinish extension = recipeDef.GetModExtension<RecipeDefExtension_HediffOnFinish>();
+
+                if (Rand.Chance(extension.chance))
+                {
+                    if (!worker.health.hediffSet.HasHediff(extension.hediff))
+                    {
+                        worker.health.AddHediff(extension.hediff);
+                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += extension.severity;
+                    }
+                    else
+                    {
+                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += extension.severity;
+                    }
+                }
+            }
         }
     }
 }
