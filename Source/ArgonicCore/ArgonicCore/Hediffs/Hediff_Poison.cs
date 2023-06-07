@@ -1,62 +1,61 @@
 ﻿using RimWorld;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Verse;
 
 namespace ArgonicCore.Hediffs
 {
-    public class Hediff_Poison : HediffWithComps
+    public class HediffCompProperties_Poison : HediffCompProperties
     {
+        public HediffCompProperties_Poison() => compClass = typeof(HediffComp_Poison);
+
+        public float poisonStrength; // How hard the poison progresses.
+        public float poisonStability; // How often the poison can progress.
+    }
+
+    public class HediffComp_Poison : HediffComp
+    {
+        public HediffCompProperties_Poison Props => (HediffCompProperties_Poison)props;
+
         private float intervalFactor;
-        private float tendQualityTotal;
-        private float timeFactor;
+        private float cureChance;
 
-        public override void PostMake()
+        public override void CompPostMake()
         {
-            base.PostMake();
-            intervalFactor = Rand.Range(0.1f, 0.5f);
-            timeFactor = Rand.Range(0.93f, 1.12f);
+            base.CompPostMake();
+            intervalFactor = Rand.Range(0.95f, 1.95f); // Random-based interval.
+            cureChance = (Props.poisonStability * 0.5f) - (Props.poisonStrength * 0.22f);
         }
 
-        public override void ExposeData()
+        public override void CompPostTick(ref float severityAdjustment)
         {
-            base.ExposeData();
-            Scribe_Values.Look(ref intervalFactor, "intervalFactor", 0f, false);
-        }
-
-        public override void Tick()
-        {
-            base.Tick();
-            if (pawn.IsHashIntervalTick((int)(5000f * intervalFactor)))
+            base.CompPostTick(ref severityAdjustment);
+            if (Pawn != null && Pawn.IsHashIntervalTick((int)(5000f * intervalFactor * Props.poisonStability)))
             {
-                float extraSeverity = Rand.Range(-0.003f, 0.053f) * timeFactor;
-                Severity += extraSeverity;
-                timeFactor += Rand.Range(0.01f, 0.07f);
-                tendQualityTotal -= extraSeverity * Rand.Range(0.63f, 0.93f);
+                parent.Severity += Rand.Range(0.085f, 0.185f) * Props.poisonStrength;
             }
         }
 
-        public override bool TendableNow(bool ignoreTimer = false)
+        public override void CompTended(float quality, float maxQuality, int batchPosition = 0)
         {
-            return tendQualityTotal <= 0;
-        }
-
-        public override void Tended(float quality, float maxQuality, int batchPosition = 0)
-        {
-            base.Tended(quality, maxQuality, batchPosition);
-            float num = 0.05f * quality;
+            base.CompTended(quality, maxQuality, batchPosition);
+            //if (Rand.Chance((cureChance + (maxQuality * (cureChance * 0.5f))) * quality))
+            float num = cureChance * quality;
             if (Rand.Value < num)
             {
-                if (batchPosition == 0 && pawn.Spawned)
+                if (batchPosition == 0 && parent.pawn.Spawned)
                 {
-                    tendQualityTotal += num * 0.48f;
-                    MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, "TextMote_TreatSuccess".Translate(num.ToStringPercent()), 6.5f);
+                    MoteMaker.ThrowText(parent.pawn.DrawPos, parent.pawn.Map, "TextMote_TreatSuccess".Translate(num.ToStringPercent()), 6.5f);
                 }
-                Severity -= 0.433f;
+                parent.pawn.health.RemoveHediff(parent);
                 return;
             }
-            if (batchPosition == 0 && pawn.Spawned)
+            if (batchPosition == 0 && parent.pawn.Spawned)
             {
-                tendQualityTotal += num;
-                MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, "TextMote_TreatFailed".Translate(num.ToStringPercent()), 6.5f);
+                MoteMaker.ThrowText(parent.pawn.DrawPos, parent.pawn.Map, "TextMote_TreatFailed".Translate(num.ToStringPercent()), 6.5f);
             }
         }
     }

@@ -1,13 +1,16 @@
 ﻿using RimWorld;
+using System.Collections.Generic;
+using System.Linq;
 using Verse;
 
 namespace ArgonicCore.IngestionOutcomes
 {
-    internal class IngestionOutcomeDoer_CanGiveHediff : IngestionOutcomeDoer_GiveHediff
+    public class IngestionOutcomeDoer_CanGiveHediff : IngestionOutcomeDoer
     {
-        public HediffDef hediff;
+        public HediffDef hediffDef;
         public bool dependsOnQuality;
         public float baseChance;
+        public float severity;
 
         public float qualityFactorAwful = 1f;
         public float qualityFactorPoor = 1f;
@@ -16,6 +19,8 @@ namespace ArgonicCore.IngestionOutcomes
         public float qualityFactorExcellent = 1f;
         public float qualityFactorMasterwork = 1f;
         public float qualityFactorLegendary = 1f;
+
+        private bool divideByBodySize;
 
         protected override void DoIngestionOutcomeSpecial(Pawn pawn, Thing ingested)
         {
@@ -43,9 +48,30 @@ namespace ArgonicCore.IngestionOutcomes
 
             if (Rand.Chance(baseChance * qualityFactor))
             {
-                hediffDef = hediff;
-                base.DoIngestionOutcomeSpecial(pawn, ingested);
-            }
+                Hediff hediff = HediffMaker.MakeHediff(hediffDef, pawn, null);
+                float num;
+                if (severity > 0f)
+                {
+                    num = severity;
+                }
+                else
+                {
+                    num = hediffDef.initialSeverity;
+                }
+                if (divideByBodySize)
+                {
+                    num /= pawn.BodySize;
+                }
+                //AddictionUtility.ModifyChemicalEffectForToleranceAndBodySize_NewTemp(pawn, this.toleranceChemical, ref num, this.multiplyByGeneToleranceFactors);
+                hediff.Severity = num;
+                pawn.health.AddHediff(hediff, null, null, null);
+            } 
         }
+
+        // This is a little bit cargo-cult but yeah maybe doesn't affect much.
+        //public override IEnumerable<StatDrawEntry> SpecialDisplayStats(ThingDef parentDef)
+        //{
+        //    return Enumerable.Empty<StatDrawEntry>();
+        //}
     }
 }
