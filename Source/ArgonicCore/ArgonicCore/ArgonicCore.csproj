@@ -69,7 +69,6 @@
     <Compile Include="GameComponents\GameComponents.cs" />
     <Compile Include="HarmonyPatches.cs" />
     <Compile Include="Hediffs\Hediff_Poison.cs" />
-    <Compile Include="Hediffs\Hediff_PoisonOld.cs" />
     <Compile Include="IngestionOutcomes\IngestionOutcomeDoer_CanGiveHediff.cs" />
     <Compile Include="IngestionOutcomes\IngestionOutcomeDoer_GiveHediffIfContaminated.cs" />
     <Compile Include="ModExtensions\RecipeDefExtensions.cs" />
