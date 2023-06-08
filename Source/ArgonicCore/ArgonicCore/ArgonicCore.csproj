@@ -59,14 +59,12 @@
   <ItemGroup>
     <Compile Include="ArgonicCore.cs" />
     <Compile Include="ArgonicCore_VFECodeExtension.cs" />
-    <Compile Include="Commands\Command_SelectMaterial.cs" />
     <Compile Include="Comps\CompCanGiveHediff.cs" />
     <Compile Include="Comps\CompContaminable.cs" />
     <Compile Include="Comps\CompCrate.cs" />
     <Compile Include="Comps\CompRuinOverTime.cs" />
     <Compile Include="CompUseEffect_SpawnCrateContents.cs" />
     <Compile Include="CustomDefs.cs" />
-    <Compile Include="GameComponents\GameComponents.cs" />
     <Compile Include="HarmonyPatches.cs" />
     <Compile Include="Hediffs\Hediff_Poison.cs" />
     <Compile Include="IngestionOutcomes\IngestionOutcomeDoer_CanGiveHediff.cs" />
@@ -74,7 +72,7 @@
     <Compile Include="ModExtensions\RecipeDefExtensions.cs" />
     <Compile Include="ModExtensions\ThingDefExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utilities\MaterialExchangingUtility.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
