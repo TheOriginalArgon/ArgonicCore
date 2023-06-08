@@ -147,6 +147,7 @@ namespace ArgonicCore
             return true;
         }
 
+        #region Resource Interchangeability
         // Patches for interchangable stuff.
 
         // Do not merge the costlist when stuff matches other resources.
@@ -344,6 +345,7 @@ namespace ArgonicCore
             }
             yield break;
         }
+        #endregion
 
         // Recipe extension to add hediff upon finish.
         [HarmonyPostfix]
