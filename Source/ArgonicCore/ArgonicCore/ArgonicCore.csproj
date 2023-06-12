@@ -66,6 +66,7 @@
     <Compile Include="Comps\CompRuinOverTime.cs" />
     <Compile Include="CompUseEffect_SpawnCrateContents.cs" />
     <Compile Include="CustomDefs.cs" />
+    <Compile Include="Defs\Defs.cs" />
     <Compile Include="GameComponents\GameComponents.cs" />
     <Compile Include="HarmonyPatches.cs" />
     <Compile Include="Hediffs\Hediff_Poison.cs" />

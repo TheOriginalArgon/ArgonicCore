@@ -4,6 +4,7 @@ using System.Data.SqlTypes;
 using System.Linq;
 using System.Reflection.Emit;
 using ArgonicCore.Comps;
+using ArgonicCore.Defs;
 using ArgonicCore.ModExtensions;
 using ArgonicCore.Utilities;
 using HarmonyLib;
@@ -280,15 +281,6 @@ namespace ArgonicCore
                 }
             }
             __result = ___cachedMaterialsNeeded;
-            foreach (ThingDefCountClass c in ___cachedMaterialsNeeded)
-            {
-                Log.Message("[AC]Requested: " + c.ToString());
-            }
-            Log.Message("===========");
-            foreach (ThingDefCountClass c in list)
-            {
-                Log.Message("[AC]Holding: " + __instance.resourceContainer.TotalStackCountOfDef(c.thingDef) + c.thingDef.ToString());
-            }
             return false;
         }
 
@@ -368,6 +360,42 @@ namespace ArgonicCore
                         worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += extension.severity;
                     }
                 }
+            }
+        }
+
+        // Patch to yield special products. (That should not mess up the vanilla hardcoded butcher and smelt products)
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(GenRecipe), nameof(GenRecipe.MakeRecipeProducts))]
+        private static IEnumerable<Thing> MakeSpecialProducts(IEnumerable<Thing> values, RecipeDef recipeDef, List<Thing> ingredients)
+        {
+            if (recipeDef.HasModExtension<RecipeDefExtension_SpecialProducts>())
+            {
+                SpecialProductTypeDef specialProducts = recipeDef.GetModExtension<RecipeDefExtension_SpecialProducts>().productTypeDef;
+
+                int index = specialProducts.acceptedThingDefs.IndexOf(ingredients[0].def);
+
+                for (int i = 0; i < specialProducts.specialProducts.Count; i++)
+                {
+                    Thing resourceDrop = ThingMaker.MakeThing(specialProducts.specialProducts[i].thingDef, null);
+                    resourceDrop.stackCount = Mathf.RoundToInt(specialProducts.specialProducts[i].count * Rand.Range(specialProducts.modifiers[index].min, specialProducts.modifiers[index].max));
+
+                    if (Rand.Chance(specialProducts.additionalChanceBase + (specialProducts.chanceModifiers[index])))
+                    {
+                        for (int j = 0; j < specialProducts.additionalSpecialProducts.Count; j++)
+                        {
+                            Thing extraDrop = ThingMaker.MakeThing(specialProducts.additionalSpecialProducts[j].thingDef, null);
+                            extraDrop.stackCount = Mathf.RoundToInt(specialProducts.additionalSpecialProducts[j].count * Rand.Range(specialProducts.modifiers[index].min, specialProducts.modifiers[index].max));
+                            yield return extraDrop;
+                        }
+                    }
+
+                    yield return resourceDrop;
+                    yield break;
+                }
+            }
+            foreach (Thing v in values)
+            {
+                yield return v;
             }
         }
     }
