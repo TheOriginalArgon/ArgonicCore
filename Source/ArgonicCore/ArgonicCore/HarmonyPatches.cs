@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using ArgonicCore.Comps;
 using ArgonicCore.Defs;
@@ -148,9 +148,84 @@ namespace ArgonicCore
             return true;
         }
 
-        #region Resource Interchangeability
-        // Patches for interchangable stuff.
+        // Recipe extension to add hediff upon finish.
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(GenRecipe), nameof(GenRecipe.MakeRecipeProducts))]
+        private static void AddHediffPostRecipeCompletion(RecipeDef recipeDef, Pawn worker)
+        {
+            if (recipeDef.HasModExtension<RecipeDefExtension_HediffOnFinish>())
+            {
+                RecipeDefExtension_HediffOnFinish extension = recipeDef.GetModExtension<RecipeDefExtension_HediffOnFinish>();
 
+                if (Rand.Chance(extension.chance))
+                {
+                    if (!worker.health.hediffSet.HasHediff(extension.hediff))
+                    {
+                        worker.health.AddHediff(extension.hediff);
+                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += extension.severity;
+                    }
+                    else
+                    {
+                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += extension.severity;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < recipeDef.ingredients.Count; i++)
+                {
+                    // Check if the ingredient (Most likely chemfuel) is made of lead.
+                }
+            }
+        }
+
+        // Patch to yield special products. (That should not mess up the vanilla hardcoded butcher and smelt products)
+        static MethodInfo postProcessProduct = AccessTools.Method(typeof(GenRecipe), "PostProcessProduct");
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(GenRecipe), nameof(GenRecipe.MakeRecipeProducts))]
+        private static IEnumerable<Thing> MakeSpecialProducts(IEnumerable<Thing> values, RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingDefStyle style, int? overrideGraphicIndex)
+        {
+            if (!recipeDef.HasModExtension<RecipeDefExtension_SpecialProducts>())
+            {
+                foreach (Thing v in values)
+                {
+                    yield return v;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ingredients.Count; i++)
+                {
+                    if (!ingredients[i].def.HasModExtension<ThingDefExtension_SpecialProducts>())
+                    {
+                        Log.Error("Error: " + ingredients[i].def.defName + " doesn't have ThingDefExtension_SpecialProducts.");
+                    }
+                    else
+                    {
+                        ThingDefExtension_SpecialProducts extension = ingredients[i].def.GetModExtension<ThingDefExtension_SpecialProducts>();
+                        for (int j = 0; j < extension.productTypeDef.products.Count; j++)
+                        {
+                            int num = Rand.Range(extension.productTypeDef.products[j].Min, extension.productTypeDef.products[j].Max);
+                            if (num > 0)
+                            {
+                                Thing product = ThingMaker.MakeThing(extension.productTypeDef.products[j].thingDef, null);
+                                product.stackCount = num;
+                                yield return (Thing)postProcessProduct.Invoke(null, new object[] { product, recipeDef, worker, precept, style, overrideGraphicIndex });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Resource interchangeability has a lot of patches that touch the ingredient lists.
+    #region Resource Interchangeability
+    // Patches for interchangable stuff.
+    [HarmonyPatch]
+    public static class HarmonyPatches_ResourceInterchangeability
+    {
         // Do not merge the costlist when stuff matches other resources.
         [HarmonyTranspiler]
         [HarmonyPatch(typeof(CostListCalculator), nameof(CostListCalculator.CostListAdjusted), new[] { typeof(BuildableDef), typeof(ThingDef), typeof(bool) })]
@@ -319,84 +394,51 @@ namespace ArgonicCore
         [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.GetGizmos))]
         private static IEnumerable<Gizmo> AddMaterialSelectors(IEnumerable<Gizmo> values, Blueprint_Build __instance)
         {
+            bool compatibleLists = true;
+            ThingDef thingDef = null;
+            List<object> selectedObjects = Find.Selector.SelectedObjects;
+            foreach (object obj in selectedObjects)
+            {
+                Thing thing = obj as Thing;
+                if (thing != null)
+                {
+                    if (thingDef == null)
+                    {
+                        thingDef = thing.def;
+                    }
+                    else
+                    {
+                        if (thing.def != thingDef)
+                        {
+                            compatibleLists = false;
+                        }
+                    }
+                }
+            }
             List<ThingDefCountClass> costList = __instance.def.entityDefToBuild.CostListAdjusted(__instance.stuffToUse, true);
             foreach (Gizmo gizmo in values) { yield return gizmo; }
 
-            if (__instance.Faction == Faction.OfPlayer)
+            if (compatibleLists)
             {
-                int stuffNum = __instance.Stuff == null ? 0 : 1;
-                for (int i = 0; i < costList.Count - stuffNum; i++)
+                if (__instance.Faction == Faction.OfPlayer)
                 {
-                    if (costList[i].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
+                    int stuffNum = __instance.Stuff == null ? 0 : 1;
+                    for (int i = 0; i < costList.Count - stuffNum; i++)
                     {
-                        TechLevel techLevel = MaterialExchangingUtility.GetHigherTechLevel(__instance.def.entityDefToBuild.researchPrerequisites);
-                        ThingDefExtension_InterchangableResource extension = costList[i].thingDef.GetModExtension<ThingDefExtension_InterchangableResource>();
-                        yield return MaterialExchangingUtility.SelectMaterialCommand(__instance, __instance.Map, costList[i].thingDef, extension.MaterialsByTechLevel(techLevel));
+                        if (costList[i].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
+                        {
+                            TechLevel techLevel = MaterialExchangingUtility.GetHigherTechLevel(__instance.def.entityDefToBuild.researchPrerequisites);
+                            ThingDefExtension_InterchangableResource extension = costList[i].thingDef.GetModExtension<ThingDefExtension_InterchangableResource>();
+                            yield return MaterialExchangingUtility.SelectMaterialCommand(__instance, __instance.Map, costList[i].thingDef, extension.MaterialsByTechLevel(techLevel));
+                        }
                     }
                 }
             }
             yield break;
         }
-        #endregion
-
-        // Recipe extension to add hediff upon finish.
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(GenRecipe), nameof(GenRecipe.MakeRecipeProducts))]
-        private static void AddHediffPostRecipeCompletion(RecipeDef recipeDef, Pawn worker)
-        {
-            if (recipeDef != null && recipeDef.HasModExtension<RecipeDefExtension_HediffOnFinish>())
-            {
-                RecipeDefExtension_HediffOnFinish extension = recipeDef.GetModExtension<RecipeDefExtension_HediffOnFinish>();
-
-                if (Rand.Chance(extension.chance))
-                {
-                    if (!worker.health.hediffSet.HasHediff(extension.hediff))
-                    {
-                        worker.health.AddHediff(extension.hediff);
-                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += extension.severity;
-                    }
-                    else
-                    {
-                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += extension.severity;
-                    }
-                }
-            }
-        }
-
-        // Patch to yield special products. (That should not mess up the vanilla hardcoded butcher and smelt products)
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(GenRecipe), nameof(GenRecipe.MakeRecipeProducts))]
-        private static IEnumerable<Thing> MakeSpecialProducts(IEnumerable<Thing> values, RecipeDef recipeDef, List<Thing> ingredients)
-        {
-            if (recipeDef.HasModExtension<RecipeDefExtension_SpecialProducts>())
-            {
-                SpecialProductTypeDef specialProducts = recipeDef.GetModExtension<RecipeDefExtension_SpecialProducts>().productTypeDef;
-
-                int index = specialProducts.acceptedThingDefs.IndexOf(ingredients[0].def);
-
-                for (int i = 0; i < specialProducts.specialProducts.Count; i++)
-                {
-                    Thing resourceDrop = ThingMaker.MakeThing(specialProducts.specialProducts[i].thingDef, null);
-                    resourceDrop.stackCount = Mathf.RoundToInt(specialProducts.specialProducts[i].count * Rand.Range(specialProducts.modifiers[index].min, specialProducts.modifiers[index].max));
-
-                    if (Rand.Chance(specialProducts.additionalChanceBase + (specialProducts.chanceModifiers[index])))
-                    {
-                        for (int j = 0; j < specialProducts.additionalSpecialProducts.Count; j++)
-                        {
-                            Thing extraDrop = ThingMaker.MakeThing(specialProducts.additionalSpecialProducts[j].thingDef, null);
-                            extraDrop.stackCount = Mathf.RoundToInt(specialProducts.additionalSpecialProducts[j].count * Rand.Range(specialProducts.modifiers[index].min, specialProducts.modifiers[index].max));
-                            yield return extraDrop;
-                        }
-                    }
-
-                    yield return resourceDrop;
-                    yield break;
-                }
-            }
-            foreach (Thing v in values)
-            {
-                yield return v;
-            }
-        }
     }
+    #endregion
+
+
 }
+

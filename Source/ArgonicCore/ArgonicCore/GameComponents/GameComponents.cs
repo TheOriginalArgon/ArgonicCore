@@ -12,7 +12,9 @@ namespace ArgonicCore.GameComponents
     public class GameComponent_ExtendedThings : GameComponent
     {
         public static GameComponent_ExtendedThings Instance;
-        public Dictionary<Thing, Dictionary<ThingDef, ThingDef>> optionalMaterialInUse = new Dictionary<Thing, Dictionary<ThingDef, ThingDef>>();
+        public Dictionary<Thing, InnerDict> optionalMaterialInUse = new Dictionary<Thing, InnerDict>();
+        public List<Thing> dict_thingList = new List<Thing>();
+        public List<InnerDict> dict_innerDictList = new List<InnerDict>();
 
         public GameComponent_ExtendedThings()
         {
@@ -39,7 +41,7 @@ namespace ArgonicCore.GameComponents
         public void Init()
         {
             Instance = this;
-            if (optionalMaterialInUse == null) { optionalMaterialInUse = new Dictionary<Thing, Dictionary<ThingDef, ThingDef>>(); }
+            if (optionalMaterialInUse == null) { optionalMaterialInUse = new Dictionary<Thing, InnerDict>(); }
         }
 
         public override void GameComponentTick()
@@ -48,18 +50,27 @@ namespace ArgonicCore.GameComponents
             if (Find.TickManager.TicksGame % 2000 == 0)
             {
                 TryClearDictionary();
+                foreach (KeyValuePair<Thing, InnerDict> pair in optionalMaterialInUse)
+                {
+                    Log.Message(pair.Key.def.defName);
+                    foreach (KeyValuePair<ThingDef, ThingDef> pair2 in pair.Value.materialValues)
+                    {
+                        Log.Message(pair2.Key.defName + " is replaced with " + pair2.Value.defName);
+                    }
+                }
             }
         }
 
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Collections.Look(ref optionalMaterialInUse, "optionalMaterialInUse", LookMode.Reference, LookMode.Reference);
+            TryClearDictionary();
+            Scribe_Collections.Look(ref optionalMaterialInUse, "optionalMaterialInUse", LookMode.Reference, LookMode.Deep, ref dict_thingList, ref dict_innerDictList);
         }
 
         private void TryClearDictionary()
         {
-            foreach (KeyValuePair<Thing, Dictionary<ThingDef, ThingDef>> pair in optionalMaterialInUse)
+            foreach (KeyValuePair<Thing, InnerDict> pair in optionalMaterialInUse)
             {
                 if (pair.Key == null || pair.Key.Destroyed)
                 {
@@ -68,6 +79,16 @@ namespace ArgonicCore.GameComponents
                     break;
                 }
             }
+        }
+    }
+
+    public class InnerDict : IExposable
+    {
+        public Dictionary<ThingDef, ThingDef> materialValues = new Dictionary<ThingDef, ThingDef>();
+
+        public void ExposeData()
+        {
+            Scribe_Collections.Look(ref materialValues, "materialValues_inner", LookMode.Def, LookMode.Def);
         }
     }
 }

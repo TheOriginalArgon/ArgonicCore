@@ -43,7 +43,14 @@ namespace ArgonicCore.Commands
 
         public void SetMaterialForThisBlueprint(ThingDef material, ThingDef replacement)
         {
-            thing.SetActiveOptionalMaterialFor(material, replacement);
+            foreach (object thisThing in Find.Selector.SelectedObjects)
+            {
+                thing = thisThing as Thing;
+                if (thing != null)
+                {
+                    thing.SetActiveOptionalMaterialFor(material, replacement);
+                }
+            }
         }
     }
 }

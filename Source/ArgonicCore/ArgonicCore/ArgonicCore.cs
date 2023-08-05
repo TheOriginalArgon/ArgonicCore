@@ -21,7 +21,7 @@ namespace ArgonicCore
         public static Harmony harmony;
         public ArgonicCore(ModContentPack content) : base(content)
         {
-            harmony = new Harmony("Argon.Framework");
+            harmony = new Harmony("Argon.CoreLib");
             harmony.PatchAll();
 
             // Not yet implemented.

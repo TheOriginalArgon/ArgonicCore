@@ -7,7 +7,6 @@ using ArgonicCore.Commands;
 using ArgonicCore.GameComponents;
 using ArgonicCore.ModExtensions;
 using RimWorld;
-using RimWorld.Planet;
 using Verse;
 
 namespace ArgonicCore.Utilities
@@ -75,9 +74,9 @@ namespace ArgonicCore.Utilities
         {
             try
             {
-                if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(blueprint, out Dictionary<ThingDef, ThingDef> materialInUse))
+                if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(blueprint, out InnerDict materialInUse))
                 {
-                    foreach (KeyValuePair<ThingDef, ThingDef> pair in materialInUse)
+                    foreach (KeyValuePair<ThingDef, ThingDef> pair in materialInUse.materialValues)
                     {
                         if (pair.Key == material)
                         {
@@ -97,39 +96,39 @@ namespace ArgonicCore.Utilities
         {
             if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.ContainsKey(blueprint))
             {
-                if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse[blueprint].ContainsKey(material))
+                if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse[blueprint].materialValues.ContainsKey(material))
                 {
-                    GameComponent_ExtendedThings.Instance.optionalMaterialInUse[blueprint][material] = replacement;
+                    GameComponent_ExtendedThings.Instance.optionalMaterialInUse[blueprint].materialValues[material] = replacement;
                 }
                 else
                 {
-                    GameComponent_ExtendedThings.Instance.optionalMaterialInUse[blueprint].Add(material, replacement);
+                    GameComponent_ExtendedThings.Instance.optionalMaterialInUse[blueprint].materialValues.Add(material, replacement);
                 }
             }
             else
             {
-                GameComponent_ExtendedThings.Instance.optionalMaterialInUse.Add(blueprint, new Dictionary<ThingDef, ThingDef>() { { material, replacement } });
+                GameComponent_ExtendedThings.Instance.optionalMaterialInUse.Add(blueprint, new InnerDict() { materialValues = new Dictionary<ThingDef, ThingDef> { { material, replacement } } });
             }
         }
 
         public static Dictionary<ThingDef, ThingDef> TryGetMaterialValues(this Thing thing)
         {
-            if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(thing, out Dictionary<ThingDef, ThingDef> dict))
+            if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(thing, out InnerDict dict))
             {
-                return dict;
+                return dict.materialValues;
             }
             return new Dictionary<ThingDef, ThingDef>();
         }
 
         public static void SetMaterialValues(this Thing thing, Dictionary<ThingDef, ThingDef> values)
         {
-            if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(thing, out Dictionary<ThingDef, ThingDef> dict))
+            if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(thing, out InnerDict dict))
             {
-                GameComponent_ExtendedThings.Instance.optionalMaterialInUse[thing] = values;
+                GameComponent_ExtendedThings.Instance.optionalMaterialInUse[thing].materialValues = values;
             }
             else
             {
-                GameComponent_ExtendedThings.Instance.optionalMaterialInUse.Add(thing, values);
+                GameComponent_ExtendedThings.Instance.optionalMaterialInUse.Add(thing, new InnerDict() { materialValues = values });
             }
         }
     }
