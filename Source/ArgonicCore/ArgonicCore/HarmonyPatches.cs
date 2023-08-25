@@ -14,9 +14,8 @@ using Verse;
 
 namespace ArgonicCore
 {
-    /// <summary>
-    /// A Harmony transpiler that patches the refueling code so that the fuel power of a given <see cref="ThingDef"/> is correctly applied.
-    /// </summary>
+    #region Misc. Patches
+    // Fuel power handling.
     [HarmonyPatch]
     public static class HarmonyPatch_FuelPower
     {
@@ -219,9 +218,11 @@ namespace ArgonicCore
             }
         }
     }
+    #endregion
 
     // Resource interchangeability has a lot of patches that touch the ingredient lists.
     #region Resource Interchangeability
+
     // Patches for interchangable stuff.
     [HarmonyPatch]
     public static class HarmonyPatches_ResourceInterchangeability
@@ -422,7 +423,7 @@ namespace ArgonicCore
             {
                 if (__instance.Faction == Faction.OfPlayer)
                 {
-                    int stuffNum = __instance.Stuff == null ? 0 : 1;
+                    int stuffNum = __instance.stuffToUse != null ? 1 : 0;
                     for (int i = 0; i < costList.Count - stuffNum; i++)
                     {
                         if (costList[i].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())

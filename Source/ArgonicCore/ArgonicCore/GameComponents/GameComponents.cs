@@ -50,14 +50,14 @@ namespace ArgonicCore.GameComponents
             if (Find.TickManager.TicksGame % 2000 == 0)
             {
                 TryClearDictionary();
-                foreach (KeyValuePair<Thing, InnerDict> pair in optionalMaterialInUse)
-                {
-                    Log.Message(pair.Key.def.defName);
-                    foreach (KeyValuePair<ThingDef, ThingDef> pair2 in pair.Value.materialValues)
-                    {
-                        Log.Message(pair2.Key.defName + " is replaced with " + pair2.Value.defName);
-                    }
-                }
+                //foreach (KeyValuePair<Thing, InnerDict> pair in optionalMaterialInUse)
+                //{
+                //    Log.Message(pair.Key.def.defName);
+                //    foreach (KeyValuePair<ThingDef, ThingDef> pair2 in pair.Value.materialValues)
+                //    {
+                //        Log.Message(pair2.Key.defName + " is replaced with " + pair2.Value.defName);
+                //    }
+                //}
             }
         }
 
