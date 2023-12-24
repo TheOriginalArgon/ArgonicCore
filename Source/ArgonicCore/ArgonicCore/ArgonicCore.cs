@@ -24,7 +24,8 @@ namespace ArgonicCore
             harmony = new Harmony("Argon.CoreLib");
             harmony.PatchAll();
 
-            // Not yet implemented.
+            // The code below is commented as it was intended to be used as a reference for a feature.
+            // I didn't use it at the end but I don't want to delete it either.
             #region VFE Code
             //LongEventHandler.ExecuteWhenFinished(() =>
             //{
