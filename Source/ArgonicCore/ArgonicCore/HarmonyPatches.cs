@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using ArgonicCore.Comps;
+using ArgonicCore.Defs;
 using ArgonicCore.ModExtensions;
+using ArgonicCore.Utilities;
 using HarmonyLib;
 using RimWorld;
 using UnityEngine;
@@ -12,9 +14,8 @@ using Verse;
 
 namespace ArgonicCore
 {
-    /// <summary>
-    /// A Harmony transpiler that patches the refueling code so that the fuel power of a given <see cref="ThingDef"/> is correctly applied.
-    /// </summary>
+    #region Misc. Patches
+    // Fuel power handling.
     [HarmonyPatch]
     public static class HarmonyPatch_FuelPower
     {
@@ -151,7 +152,7 @@ namespace ArgonicCore
         [HarmonyPatch(typeof(GenRecipe), nameof(GenRecipe.MakeRecipeProducts))]
         private static void AddHediffPostRecipeCompletion(RecipeDef recipeDef, Pawn worker)
         {
-            if (recipeDef != null && recipeDef.HasModExtension<RecipeDefExtension_HediffOnFinish>())
+            if (recipeDef.HasModExtension<RecipeDefExtension_HediffOnFinish>())
             {
                 RecipeDefExtension_HediffOnFinish extension = recipeDef.GetModExtension<RecipeDefExtension_HediffOnFinish>();
 
@@ -168,6 +169,277 @@ namespace ArgonicCore
                     }
                 }
             }
+            else
+            {
+                for (int i = 0; i < recipeDef.ingredients.Count; i++)
+                {
+                    // Check if the ingredient (Most likely chemfuel) is made of lead.
+                }
+            }
+        }
+
+        // Patch to yield special products. (That should not mess up the vanilla hardcoded butcher and smelt products)
+        static MethodInfo postProcessProduct = AccessTools.Method(typeof(GenRecipe), "PostProcessProduct");
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(GenRecipe), nameof(GenRecipe.MakeRecipeProducts))]
+        private static IEnumerable<Thing> MakeSpecialProducts(IEnumerable<Thing> values, RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingDefStyle style, int? overrideGraphicIndex)
+        {
+            if (!recipeDef.HasModExtension<RecipeDefExtension_SpecialProducts>())
+            {
+                foreach (Thing v in values)
+                {
+                    yield return v;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < ingredients.Count; i++)
+                {
+                    if (!ingredients[i].def.HasModExtension<ThingDefExtension_SpecialProducts>())
+                    {
+                        Log.Error("Error: " + ingredients[i].def.defName + " doesn't have ThingDefExtension_SpecialProducts.");
+                    }
+                    else
+                    {
+                        ThingDefExtension_SpecialProducts extension = ingredients[i].def.GetModExtension<ThingDefExtension_SpecialProducts>();
+                        for (int j = 0; j < extension.productTypeDef.products.Count; j++)
+                        {
+                            int num = Rand.Range(extension.productTypeDef.products[j].Min, extension.productTypeDef.products[j].Max);
+                            if (num > 0)
+                            {
+                                Thing product = ThingMaker.MakeThing(extension.productTypeDef.products[j].thingDef, null);
+                                product.stackCount = num;
+                                yield return (Thing)postProcessProduct.Invoke(null, new object[] { product, recipeDef, worker, precept, style, overrideGraphicIndex });
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
+    #endregion
+
+    // Resource interchangeability has a lot of patches that touch the ingredient lists.
+    #region Resource Interchangeability
+
+    // Patches for interchangable stuff.
+    [HarmonyPatch]
+    public static class HarmonyPatches_ResourceInterchangeability
+    {
+        // Do not merge the costlist when stuff matches other resources.
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(CostListCalculator), nameof(CostListCalculator.CostListAdjusted), new[] { typeof(BuildableDef), typeof(ThingDef), typeof(bool) })]
+        private static IEnumerable<CodeInstruction> AddInterchangableResources(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            List<CodeInstruction> code = new List<CodeInstruction>(instructions);
+
+            Label jumpLabel_01 = generator.DefineLabel();
+
+            int deletion_index1 = -1;
+            int deletion_index2 = -1;
+
+            for (int i = 0; i < code.Count; i++)
+            {
+                // Check for label insertion.
+                if (code[i].Calls(AccessTools.Method(typeof(List<ThingDefCountClass>), "Add")) && code[i + 1].opcode == OpCodes.Ldloc_S)
+                {
+                    code[i + 1].labels.Add(jumpLabel_01);
+                }
+
+                // Insert new code.
+                if (code[i].opcode == OpCodes.Ldloc_S && code[i + 1].Calls(AccessTools.Method(typeof(List<ThingDefCountClass>), "Add")))
+                {
+                    deletion_index1 = i - 4;
+                    deletion_index2 = i - 8;
+                }
+            }
+
+            code.RemoveRange(deletion_index1, 2);
+            code.RemoveRange(deletion_index2, 2);
+
+            return code.AsEnumerable();
+        }
+
+        // Pass the replacement material values to the finished Building once the Frame is completed.
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(Frame), nameof(Frame.CompleteConstruction))]
+        private static IEnumerable<CodeInstruction> AddMaterialsForThing(IEnumerable<CodeInstruction> instructions)
+        {
+            bool flag1 = false;
+            foreach (CodeInstruction instruction in instructions)
+            {
+                yield return instruction;
+
+                if (instruction.Calls(AccessTools.Method(typeof(ThingMaker), nameof(ThingMaker.MakeThing))))
+                {
+                    flag1 = true;
+                    continue;
+                }
+                if (flag1)
+                {
+                    yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.TryGetMaterialValues)));
+                    yield return new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.SetMaterialValues)));
+                    flag1 = false;
+                }
+            }
+        }
+
+        // Upon destruction, spawn the materials this Building was built with.
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(GenLeaving), nameof(GenLeaving.DoLeavingsFor), new Type[] { typeof(Thing), typeof(Map), typeof(DestroyMode), typeof(CellRect), typeof(Predicate<IntVec3>), typeof(List<Thing>) })]
+        private static IEnumerable<CodeInstruction> ReturnProperMaterials(IEnumerable<CodeInstruction> instructions)
+        {
+            foreach (CodeInstruction instruction in instructions)
+            {
+                yield return instruction;
+
+                if (instruction.Calls(AccessTools.Method(typeof(CostListCalculator), nameof(CostListCalculator.CostListAdjusted), new Type[] { typeof(Thing) })))
+                {
+                    yield return new CodeInstruction(OpCodes.Stloc_S, 12);
+                    yield return new CodeInstruction(OpCodes.Ldloc_S, 12);
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.GetCustomCostList)));
+                }
+            }
+        }
+
+        // Once a Blueprint is turned into a Frame, pass the corresponding replacement materials to it.
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Blueprint_Build), "MakeSolidThing")]
+        private static void MakeFrame(Blueprint_Build __instance, ref Thing __result)
+        {
+            __result.SetMaterialValues(__instance.TryGetMaterialValues());
+        }
+
+        // Request the replacement materials (Frame).
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Frame), nameof(Frame.MaterialsNeeded))]
+        private static bool MaterialsNeeded(Frame __instance, ref List<ThingDefCountClass> ___cachedMaterialsNeeded, ref List<ThingDefCountClass> __result)
+        {
+            ___cachedMaterialsNeeded.Clear();
+            int stuffIndex = __instance.Stuff == null ? 0 : 1;
+            List<ThingDefCountClass> list = __instance.def.entityDefToBuild.CostListAdjusted(__instance.Stuff, true);
+            for (int i = 0; i < list.Count - stuffIndex; i++)
+            {
+                ThingDefCountClass thingDefCountClass = list[i];
+                int num;
+                int num2;
+                if (thingDefCountClass.thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
+                {
+                    ThingDef optionalMaterial = __instance.GetActiveOptionalMaterialFor(thingDefCountClass.thingDef);
+                    num = __instance.resourceContainer.TotalStackCountOfDef(optionalMaterial);
+                    num2 = Mathf.RoundToInt(thingDefCountClass.count * thingDefCountClass.thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().CostModifierFor(optionalMaterial)) - num;
+                    if (num2 > 0)
+                    {
+                        ___cachedMaterialsNeeded.Add(new ThingDefCountClass(__instance.GetActiveOptionalMaterialFor(thingDefCountClass.thingDef), num2));
+                    }
+                }
+                else
+                {
+                    num = __instance.resourceContainer.TotalStackCountOfDef(thingDefCountClass.thingDef);
+                    num2 = thingDefCountClass.count - num;
+                    if (num2 > 0)
+                    {
+                        ___cachedMaterialsNeeded.Add(new ThingDefCountClass(thingDefCountClass.thingDef, num2));
+                    }
+                }
+            }
+            if (stuffIndex == 1)
+            {
+                int num = __instance.resourceContainer.TotalStackCountOfDef(__instance.Stuff);
+                int num2 = list[list.Count - 1].count - num;
+                if (num2 > 0)
+                {
+                    ___cachedMaterialsNeeded.Add(new ThingDefCountClass(__instance.Stuff, num2));
+                }
+            }
+            __result = ___cachedMaterialsNeeded;
+            return false;
+        }
+
+        // Request the replacement materials (Blueprint).
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.MaterialsNeeded))]
+        private static bool MaterialsNeeded_Blueprint(Blueprint_Build __instance, ref List<ThingDefCountClass> __result)
+        {
+            List<ThingDefCountClass> costList = __instance.def.entityDefToBuild.CostListAdjusted(__instance.stuffToUse, true);
+            if (!costList.Any(d => d.thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())) { return true; }
+            if (__result == null) { __result = new List<ThingDefCountClass>(); }
+            if (__result.Any()) { __result.Clear(); }
+
+            // Return the costlist with generic materials
+            bool usesStuff = __instance.stuffToUse != null;
+            int numStuff = usesStuff ? 1 : 0;
+
+            for (int i = 0; i < costList.Count - numStuff; i++)
+            {
+                if (costList[i].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
+                {
+                    ThingDef optionalMaterial = __instance.GetActiveOptionalMaterialFor(costList[i].thingDef);
+                    __result.Add(new ThingDefCountClass(optionalMaterial, Mathf.RoundToInt(costList[i].count * costList[i].thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().CostModifierFor(optionalMaterial))));
+                }
+                else
+                {
+                    __result.Add(costList[i]);
+                }
+            }
+            if (usesStuff) { __result.Add(costList[costList.Count - 1]); }
+            return false;
+        }
+
+        // Add the material selectors for Blueprints that have exchangeable materials.
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.GetGizmos))]
+        private static IEnumerable<Gizmo> AddMaterialSelectors(IEnumerable<Gizmo> values, Blueprint_Build __instance)
+        {
+            bool compatibleLists = true;
+            ThingDef thingDef = null;
+            List<object> selectedObjects = Find.Selector.SelectedObjects;
+            foreach (object obj in selectedObjects)
+            {
+                Thing thing = obj as Thing;
+                if (thing != null)
+                {
+                    if (thingDef == null)
+                    {
+                        thingDef = thing.def;
+                    }
+                    else
+                    {
+                        if (thing.def != thingDef)
+                        {
+                            compatibleLists = false;
+                        }
+                    }
+                }
+            }
+            List<ThingDefCountClass> costList = __instance.def.entityDefToBuild.CostListAdjusted(__instance.stuffToUse, true);
+            foreach (Gizmo gizmo in values) { yield return gizmo; }
+
+            if (compatibleLists)
+            {
+                if (__instance.Faction == Faction.OfPlayer)
+                {
+                    int stuffNum = __instance.stuffToUse != null ? 1 : 0;
+                    for (int i = 0; i < costList.Count - stuffNum; i++)
+                    {
+                        if (costList[i].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
+                        {
+                            TechLevel techLevel = MaterialExchangingUtility.GetHigherTechLevel(__instance.def.entityDefToBuild.researchPrerequisites);
+                            ThingDefExtension_InterchangableResource extension = costList[i].thingDef.GetModExtension<ThingDefExtension_InterchangableResource>();
+                            yield return MaterialExchangingUtility.SelectMaterialCommand(__instance, __instance.Map, costList[i].thingDef, extension.MaterialsByTechLevel(techLevel));
+                        }
+                    }
+                }
+            }
+            yield break;
+        }
+    }
+    #endregion
+
+
 }
+
