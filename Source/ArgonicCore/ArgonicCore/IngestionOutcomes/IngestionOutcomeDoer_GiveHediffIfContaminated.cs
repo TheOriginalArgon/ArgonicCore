@@ -11,7 +11,7 @@ namespace ArgonicCore.IngestionOutcomes
 {
     public class IngestionOutcomeDoer_GiveHediffIfContaminated : IngestionOutcomeDoer_GiveHediff
     {
-        protected override void DoIngestionOutcomeSpecial(Pawn pawn, Thing ingested)
+        protected override void DoIngestionOutcomeSpecial(Pawn pawn, Thing ingested, int ingestedCount)
         {
             CompContaminable compContaminable = ingested.TryGetComp<CompContaminable>();
             if (compContaminable != null)
@@ -21,7 +21,7 @@ namespace ArgonicCore.IngestionOutcomes
                     for (int i = 0; i < compContaminable.HediffsContaminedWith.Count; i++)
                     {
                         hediffDef = compContaminable.HediffsContaminedWith[i];
-                        base.DoIngestionOutcomeSpecial(pawn, ingested);
+                        base.DoIngestionOutcomeSpecial(pawn, ingested, ingestedCount);
                     }
                 }
             }

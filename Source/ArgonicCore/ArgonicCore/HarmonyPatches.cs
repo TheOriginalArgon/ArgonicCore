@@ -316,10 +316,10 @@ namespace ArgonicCore
 
         // Request the replacement materials (Frame).
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Frame), nameof(Frame.MaterialsNeeded))]
-        private static bool MaterialsNeeded(Frame __instance, ref List<ThingDefCountClass> ___cachedMaterialsNeeded, ref List<ThingDefCountClass> __result)
+        [HarmonyPatch(typeof(Frame), nameof(Frame.TotalMaterialCost))]
+        private static bool MaterialsNeeded(Frame __instance, ref List<ThingDefCountClass> __result)
         {
-            ___cachedMaterialsNeeded.Clear();
+            //___cachedMaterialsNeeded.Clear();
             int stuffIndex = __instance.Stuff == null ? 0 : 1;
             List<ThingDefCountClass> list = __instance.def.entityDefToBuild.CostListAdjusted(__instance.Stuff, true);
             for (int i = 0; i < list.Count - stuffIndex; i++)
@@ -334,7 +334,7 @@ namespace ArgonicCore
                     num2 = Mathf.RoundToInt(thingDefCountClass.count * thingDefCountClass.thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().CostModifierFor(optionalMaterial)) - num;
                     if (num2 > 0)
                     {
-                        ___cachedMaterialsNeeded.Add(new ThingDefCountClass(__instance.GetActiveOptionalMaterialFor(thingDefCountClass.thingDef), num2));
+                        list.Add(new ThingDefCountClass(__instance.GetActiveOptionalMaterialFor(thingDefCountClass.thingDef), num2));
                     }
                 }
                 else
@@ -343,7 +343,7 @@ namespace ArgonicCore
                     num2 = thingDefCountClass.count - num;
                     if (num2 > 0)
                     {
-                        ___cachedMaterialsNeeded.Add(new ThingDefCountClass(thingDefCountClass.thingDef, num2));
+                        list.Add(new ThingDefCountClass(thingDefCountClass.thingDef, num2));
                     }
                 }
             }
@@ -353,16 +353,16 @@ namespace ArgonicCore
                 int num2 = list[list.Count - 1].count - num;
                 if (num2 > 0)
                 {
-                    ___cachedMaterialsNeeded.Add(new ThingDefCountClass(__instance.Stuff, num2));
+                    list.Add(new ThingDefCountClass(__instance.Stuff, num2));
                 }
             }
-            __result = ___cachedMaterialsNeeded;
+            __result = list;
             return false;
         }
 
         // Request the replacement materials (Blueprint).
         [HarmonyPrefix]
-        [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.MaterialsNeeded))]
+        [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.TotalMaterialCost))]
         private static bool MaterialsNeeded_Blueprint(Blueprint_Build __instance, ref List<ThingDefCountClass> __result)
         {
             List<ThingDefCountClass> costList = __instance.def.entityDefToBuild.CostListAdjusted(__instance.stuffToUse, true);

@@ -87,7 +87,7 @@ namespace ArgonicCore.Utilities
             }
             catch (NullReferenceException e)
             {
-                Log.Error("It's here! " + e.InnerException);
+                //Log.Error("It's here! " + e.InnerException);
             }
             return material.GetModExtension<ThingDefExtension_InterchangableResource>().defaultThingDef;
         }

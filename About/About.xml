@@ -4,6 +4,7 @@
     <packageId>Argon.CoreLib</packageId>
     <supportedVersions>
         <li>1.4</li>
+        <li>1.5</li>
     </supportedVersions>
     <description>Code Framework.</description>
     <modDependencies>

@@ -75,7 +75,7 @@ namespace ArgonicCore.GameComponents
                 if (pair.Key == null || pair.Key.Destroyed)
                 {
                     optionalMaterialInUse.Remove(pair.Key);
-                    Log.Message("Discarded " + pair.Key.ToString() + ". No longer exists.");
+                    //Log.Message("Discarded " + pair.Key.ToString() + ". No longer exists.");
                     break;
                 }
             }

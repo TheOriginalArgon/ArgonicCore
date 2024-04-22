@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Verse;
+using UnityEngine;
 
 namespace ArgonicCore.Hediffs
 {
@@ -27,7 +28,6 @@ namespace ArgonicCore.Hediffs
         {
             base.CompPostMake();
             intervalFactor = Rand.Range(0.95f, 1.95f); // Random-based interval.
-            cureChance = (Props.poisonStability * 0.5f) - (Props.poisonStrength * 0.22f);
         }
 
         public override void CompPostTick(ref float severityAdjustment)
@@ -42,21 +42,19 @@ namespace ArgonicCore.Hediffs
         public override void CompTended(float quality, float maxQuality, int batchPosition = 0)
         {
             base.CompTended(quality, maxQuality, batchPosition);
-            //if (Rand.Chance((cureChance + (maxQuality * (cureChance * 0.5f))) * quality))
-            float num = cureChance * quality;
-            if (Rand.Value < num)
+            if (Rand.Chance(CureChance(quality)))
             {
-                if (batchPosition == 0 && parent.pawn.Spawned)
-                {
-                    MoteMaker.ThrowText(parent.pawn.DrawPos, parent.pawn.Map, "TextMote_TreatSuccess".Translate(num.ToStringPercent()), 6.5f);
-                }
                 parent.pawn.health.RemoveHediff(parent);
+                Messages.Message("TM_BrootPoisoningCured".Translate(parent.pawn.Name.Named("PAWN")), parent.pawn, MessageTypeDefOf.PositiveEvent);
                 return;
             }
-            if (batchPosition == 0 && parent.pawn.Spawned)
-            {
-                MoteMaker.ThrowText(parent.pawn.DrawPos, parent.pawn.Map, "TextMote_TreatFailed".Translate(num.ToStringPercent()), 6.5f);
-            }
+        }
+
+        private float CureChance(float quality)
+        {
+            float rnd = Rand.Range(0f, 1f);
+            float num = (1 - Props.poisonStrength) * (1 + (rnd / 2) - Props.poisonStability) * (1 + rnd) * quality;
+            return num;
         }
     }
 }

@@ -22,7 +22,7 @@ namespace ArgonicCore.IngestionOutcomes
 
         private bool divideByBodySize;
 
-        protected override void DoIngestionOutcomeSpecial(Pawn pawn, Thing ingested)
+        protected override void DoIngestionOutcomeSpecial(Pawn pawn, Thing ingested, int ingestedCount)
         {
             float qualityFactor = 1f;
 
