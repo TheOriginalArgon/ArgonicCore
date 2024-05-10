@@ -61,7 +61,7 @@ namespace ArgonicCore.Comps
                         {
                             if (!compContaminable.IsContaminatedNow() && !compContaminable.IsBaseContaminator)
                             {
-                                if (Rand.Chance(0.035f * Props.contaminationPower))
+                                if (Rand.Chance(0.015f * Props.contaminationPower))
                                 {
                                     compContaminable.SetContaminated(BaseContaminatorHediffs);
                                 }
