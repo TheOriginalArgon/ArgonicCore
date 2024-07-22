@@ -12,4 +12,12 @@ namespace ArgonicCore.Defs
     {
         public List<ThingDefCountRangeClass> products;
     }
+
+    public sealed class MaterialReplacementDef : Def
+    {
+        public ThingDef materialToReplace;
+        public ThingDef replaceWith;
+        public TechLevel maxTechLevel;
+        public float costModifier;
+    }
 }

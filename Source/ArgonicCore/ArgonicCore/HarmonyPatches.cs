@@ -227,168 +227,47 @@ namespace ArgonicCore
     [HarmonyPatch]
     public static class HarmonyPatches_ResourceInterchangeability
     {
-        // Do not merge the costlist when stuff matches other resources.
-        [HarmonyTranspiler]
-        [HarmonyPatch(typeof(CostListCalculator), nameof(CostListCalculator.CostListAdjusted), new[] { typeof(BuildableDef), typeof(ThingDef), typeof(bool) })]
-        private static IEnumerable<CodeInstruction> AddInterchangableResources(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        private static Thing momentaryThing;
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(CostListCalculator), "CostListAdjusted", new Type[] { typeof(Thing) })]
+        private static bool PrefixToRegisterThing(Thing thing)
         {
-            List<CodeInstruction> code = new List<CodeInstruction>(instructions);
-
-            Label jumpLabel_01 = generator.DefineLabel();
-
-            int deletion_index1 = -1;
-            int deletion_index2 = -1;
-
-            for (int i = 0; i < code.Count; i++)
-            {
-                // Check for label insertion.
-                if (code[i].Calls(AccessTools.Method(typeof(List<ThingDefCountClass>), "Add")) && code[i + 1].opcode == OpCodes.Ldloc_S)
-                {
-                    code[i + 1].labels.Add(jumpLabel_01);
-                }
-
-                // Insert new code.
-                if (code[i].opcode == OpCodes.Ldloc_S && code[i + 1].Calls(AccessTools.Method(typeof(List<ThingDefCountClass>), "Add")))
-                {
-                    deletion_index1 = i - 4;
-                    deletion_index2 = i - 8;
-                }
-            }
-
-            code.RemoveRange(deletion_index1, 2);
-            code.RemoveRange(deletion_index2, 2);
-
-            return code.AsEnumerable();
+            momentaryThing = thing;
+            return true;
         }
 
-        // Pass the replacement material values to the finished Building once the Frame is completed.
-        [HarmonyTranspiler]
-        [HarmonyPatch(typeof(Frame), nameof(Frame.CompleteConstruction))]
-        private static IEnumerable<CodeInstruction> AddMaterialsForThing(IEnumerable<CodeInstruction> instructions)
-        {
-            bool flag1 = false;
-            foreach (CodeInstruction instruction in instructions)
-            {
-                yield return instruction;
-
-                if (instruction.Calls(AccessTools.Method(typeof(ThingMaker), nameof(ThingMaker.MakeThing))))
-                {
-                    flag1 = true;
-                    continue;
-                }
-                if (flag1)
-                {
-                    yield return new CodeInstruction(OpCodes.Ldloc_S, 4);
-                    yield return new CodeInstruction(OpCodes.Ldarg_0);
-                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.TryGetMaterialValues)));
-                    yield return new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.SetMaterialValues)));
-                    flag1 = false;
-                }
-            }
-        }
-
-        // Upon destruction, spawn the materials this Building was built with.
-        [HarmonyTranspiler]
-        [HarmonyPatch(typeof(GenLeaving), nameof(GenLeaving.DoLeavingsFor), new Type[] { typeof(Thing), typeof(Map), typeof(DestroyMode), typeof(CellRect), typeof(Predicate<IntVec3>), typeof(List<Thing>) })]
-        private static IEnumerable<CodeInstruction> ReturnProperMaterials(IEnumerable<CodeInstruction> instructions)
-        {
-            foreach (CodeInstruction instruction in instructions)
-            {
-                yield return instruction;
-
-                if (instruction.Calls(AccessTools.Method(typeof(CostListCalculator), nameof(CostListCalculator.CostListAdjusted), new Type[] { typeof(Thing) })))
-                {
-                    yield return new CodeInstruction(OpCodes.Stloc_S, 12);
-                    yield return new CodeInstruction(OpCodes.Ldloc_S, 12);
-                    yield return new CodeInstruction(OpCodes.Ldarg_0);
-                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.GetCustomCostList)));
-                }
-            }
-        }
-
-        // Once a Blueprint is turned into a Frame, pass the corresponding replacement materials to it.
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Blueprint_Build), "MakeSolidThing")]
-        private static void MakeFrame(Blueprint_Build __instance, ref Thing __result)
+        [HarmonyPatch(typeof(CostListCalculator), "CostListAdjusted", new Type[] { typeof(Thing) })]
+        private static void PostfixToRegisterThing()
         {
-            __result.SetMaterialValues(__instance.TryGetMaterialValues());
+            momentaryThing = null;
         }
 
-        // Request the replacement materials (Frame).
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(Frame), nameof(Frame.TotalMaterialCost))]
-        private static bool MaterialsNeeded(Frame __instance, ref List<ThingDefCountClass> __result)
+        // CostList with replacement materials. TODO: Maybe now patch this directly and save two harmony methods.
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(CostListCalculator), "CostListAdjusted", new Type[] { typeof(BuildableDef), typeof(ThingDef), typeof(bool) })]
+        private static void ModifiedCostList(List<ThingDefCountClass> __result)
         {
-            //___cachedMaterialsNeeded.Clear();
-            int stuffIndex = __instance.Stuff == null ? 0 : 1;
-            List<ThingDefCountClass> list = __instance.def.entityDefToBuild.CostListAdjusted(__instance.Stuff, true);
-            for (int i = 0; i < list.Count - stuffIndex; i++)
+            if (momentaryThing != null)
             {
-                ThingDefCountClass thingDefCountClass = list[i];
-                int num;
-                int num2;
-                if (thingDefCountClass.thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
-                {
-                    ThingDef optionalMaterial = __instance.GetActiveOptionalMaterialFor(thingDefCountClass.thingDef);
-                    num = __instance.resourceContainer.TotalStackCountOfDef(optionalMaterial);
-                    num2 = Mathf.RoundToInt(thingDefCountClass.count * thingDefCountClass.thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().CostModifierFor(optionalMaterial)) - num;
-                    if (num2 > 0)
-                    {
-                        list.Add(new ThingDefCountClass(__instance.GetActiveOptionalMaterialFor(thingDefCountClass.thingDef), num2));
-                    }
-                }
-                else
-                {
-                    num = __instance.resourceContainer.TotalStackCountOfDef(thingDefCountClass.thingDef);
-                    num2 = thingDefCountClass.count - num;
-                    if (num2 > 0)
-                    {
-                        list.Add(new ThingDefCountClass(thingDefCountClass.thingDef, num2));
-                    }
-                }
+                Log.Warning($"Momentary thing is an instance of {momentaryThing.def.defName}, which is {momentaryThing}");
+                __result = MaterialExchangingUtility.GetCustomCostListFor(__result, momentaryThing);
+
+                //foreach (ThingDefCountClass c in __result)
+                //{
+                //    Log.Warning($"{c.thingDef} x{c.count}");
+                //}
+                return;
             }
-            if (stuffIndex == 1)
+            else
             {
-                int num = __instance.resourceContainer.TotalStackCountOfDef(__instance.Stuff);
-                int num2 = list[list.Count - 1].count - num;
-                if (num2 > 0)
-                {
-                    list.Add(new ThingDefCountClass(__instance.Stuff, num2));
-                }
+                __result = MaterialExchangingUtility.MergeList(__result);
+                return;
             }
-            __result = list;
-            return false;
         }
 
-        // Request the replacement materials (Blueprint).
-        [HarmonyPrefix]
-        [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.TotalMaterialCost))]
-        private static bool MaterialsNeeded_Blueprint(Blueprint_Build __instance, ref List<ThingDefCountClass> __result)
-        {
-            List<ThingDefCountClass> costList = __instance.def.entityDefToBuild.CostListAdjusted(__instance.stuffToUse, true);
-            if (!costList.Any(d => d.thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())) { return true; }
-            if (__result == null) { __result = new List<ThingDefCountClass>(); }
-            if (__result.Any()) { __result.Clear(); }
-
-            // Return the costlist with generic materials
-            bool usesStuff = __instance.stuffToUse != null;
-            int numStuff = usesStuff ? 1 : 0;
-
-            for (int i = 0; i < costList.Count - numStuff; i++)
-            {
-                if (costList[i].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
-                {
-                    ThingDef optionalMaterial = __instance.GetActiveOptionalMaterialFor(costList[i].thingDef);
-                    __result.Add(new ThingDefCountClass(optionalMaterial, Mathf.RoundToInt(costList[i].count * costList[i].thingDef.GetModExtension<ThingDefExtension_InterchangableResource>().CostModifierFor(optionalMaterial))));
-                }
-                else
-                {
-                    __result.Add(costList[i]);
-                }
-            }
-            if (usesStuff) { __result.Add(costList[costList.Count - 1]); }
-            return false;
-        }
+        #region Blueprint Handling
 
         // Add the material selectors for Blueprints that have exchangeable materials.
         [HarmonyPostfix]
@@ -416,27 +295,129 @@ namespace ArgonicCore
                     }
                 }
             }
-            List<ThingDefCountClass> costList = __instance.def.entityDefToBuild.CostListAdjusted(__instance.stuffToUse, true);
+            List<ThingDefCountClass> costList = __instance.def.entityDefToBuild.CostList;
             foreach (Gizmo gizmo in values) { yield return gizmo; }
 
             if (compatibleLists)
             {
                 if (__instance.Faction == Faction.OfPlayer)
                 {
-                    int stuffNum = __instance.stuffToUse != null ? 1 : 0;
-                    for (int i = 0; i < costList.Count - stuffNum; i++)
+                    TechLevel techLevel = MaterialExchangingUtility.GetHigherTechLevel(__instance.def.entityDefToBuild.researchPrerequisites);
+                    List<ThingDef> replacementMaterials;
+                    for (int i = 0; i < costList.Count; i++)
                     {
-                        if (costList[i].thingDef.HasModExtension<ThingDefExtension_InterchangableResource>())
+
+                        // If there are any materials that can replace the current one.
+                        if (MaterialExchangingUtility.ExistMaterialsToReplaceAtTechLevel(costList[i].thingDef, techLevel, out replacementMaterials))
                         {
-                            TechLevel techLevel = MaterialExchangingUtility.GetHigherTechLevel(__instance.def.entityDefToBuild.researchPrerequisites);
-                            ThingDefExtension_InterchangableResource extension = costList[i].thingDef.GetModExtension<ThingDefExtension_InterchangableResource>();
-                            yield return MaterialExchangingUtility.SelectMaterialCommand(__instance, __instance.Map, costList[i].thingDef, extension.MaterialsByTechLevel(techLevel));
+                            yield return MaterialExchangingUtility.SelectMaterialCommand(__instance, __instance.Map, costList[i].thingDef, replacementMaterials);
                         }
                     }
                 }
             }
             yield break;
         }
+
+        // Once a Blueprint is turned into a Frame, pass the corresponding replacement materials to it.
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Blueprint_Build), "MakeSolidThing")]
+        private static void MakeFrame(Blueprint_Build __instance, ref Thing __result)
+        {
+            __result.SetMaterialValues(__instance.TryGetMaterialValues());
+        }
+
+        // Blueprint request materials.
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.TotalMaterialCost))]
+        private static void BlueprintCostList(Blueprint_Build __instance, ref List<ThingDefCountClass> __result)
+        {
+            __result = MaterialExchangingUtility.GetCustomCostListFor(__result, __instance);
+            Log.Warning($"{__instance} is requesting:");
+            foreach (ThingDefCountClass c in __result)
+            {
+                Log.Warning($"\t- {c.count}x {c.thingDef}");
+            }
+        }
+        #endregion
+
+        #region Frame Handling
+        // Pass the replacement material values to the finished Building once the Frame is completed.
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(Frame), nameof(Frame.CompleteConstruction))]
+        private static IEnumerable<CodeInstruction> AddMaterialsForThing(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> code = instructions.ToList();
+
+            for (int i = 0; i < code.Count; i++)
+            {
+                yield return code[i];
+
+                if (code[i].Calls(AccessTools.Method(typeof(GenSpawn), nameof(GenSpawn.Spawn), new Type[] { typeof(Thing), typeof(IntVec3), typeof(Map), typeof(Rot4), typeof(WipeMode), typeof(bool), typeof(bool) })))
+                {
+                    //yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.TryGetMaterialValues)));
+                    yield return new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.SetMaterialValues)));
+                    i++;
+                }
+            }
+        }
+
+        // Frame request materials.
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Frame), nameof(Frame.TotalMaterialCost))]
+        private static void FrameCostList(Frame __instance, ref List<ThingDefCountClass> __result)
+        {
+            __result = MaterialExchangingUtility.GetCustomCostListFor(__result, __instance);
+            Log.Warning($"{__instance} is requesting:");
+            foreach (ThingDefCountClass c in __result)
+            {
+                Log.Warning($"\t- {c.count}x {c.thingDef}");
+            }
+        }
+
+        //Upon destruction, spawn the materials this Building was built with.
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(GenLeaving), nameof(GenLeaving.DoLeavingsFor), new Type[] { typeof(Thing), typeof(Map), typeof(DestroyMode), typeof(CellRect), typeof(Predicate<IntVec3>), typeof(List<Thing>) })]
+        private static IEnumerable<CodeInstruction> ReturnProperMaterials(IEnumerable<CodeInstruction> instructions)
+        {
+            foreach (CodeInstruction instruction in instructions)
+            {
+                yield return instruction;
+
+                if (instruction.Calls(AccessTools.Method(typeof(CostListCalculator), nameof(CostListCalculator.CostListAdjusted), new Type[] { typeof(Thing) })))
+                {
+                    yield return new CodeInstruction(OpCodes.Stloc_S, 12);
+                    yield return new CodeInstruction(OpCodes.Ldloc_S, 12);
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.GetCustomCostListFor), new Type[] { typeof(List<ThingDefCountClass>), typeof(Thing) }));
+                }
+            }
+        }
+
+        // Transpiler to literally fix a line of code in the game that is nonsense.
+        [HarmonyTranspiler]
+        [HarmonyPatch(typeof(Frame), nameof(Frame.GetInspectString))]
+        private static IEnumerable<CodeInstruction> InspectStringWrongCall(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> code = instructions.ToList();
+
+            for (int i = 0; i < code.Count; i++)
+            {
+                yield return code[i];
+                if (i < 35 && code[i + 9].opcode == OpCodes.Stloc_2 && code[i + 10].opcode == OpCodes.Br_S)
+                {
+
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Frame), "TotalMaterialCost"));
+                    yield return new CodeInstruction(OpCodes.Stloc_1);
+                    yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                    yield return new CodeInstruction(OpCodes.Stloc_3);
+                    i += 9;
+                }
+            }
+            yield break;
+        }
+        #endregion
     }
     #endregion
 
