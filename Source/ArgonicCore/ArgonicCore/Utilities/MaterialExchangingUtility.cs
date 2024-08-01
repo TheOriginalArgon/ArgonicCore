@@ -70,6 +70,12 @@ namespace ArgonicCore.Utilities
             return false;
         }
 
+        public static float GetCostModifierFor(ThingDef thingDef, ThingDef replacement)
+        {
+            float costMod = (from x in DefDatabase<MaterialReplacementDef>.AllDefsListForReading where x.materialToReplace == thingDef && x.replaceWith == replacement select x.costModifier).FirstOrDefault();
+            return costMod;
+        }
+
         public static bool IsMaterialBeingReplacedIn(ThingDef thingDef, Thing thing)
         {
             return thing.GetActiveOptionalMaterialFor(thingDef) != thingDef;
@@ -97,14 +103,13 @@ namespace ArgonicCore.Utilities
                         int actualMaterialCost = cost - stuffCost;
                         if (actualMaterialCost > 0)
                         {
-                            
-                            result.Add(new ThingDefCountClass(replacementMaterial, actualMaterialCost));
+                            result.Add(new ThingDefCountClass(replacementMaterial, Mathf.RoundToInt(actualMaterialCost * GetCostModifierFor(material, replacementMaterial))));
                         }
                         result.Add(new ThingDefCountClass(callingThing.stuffToUse, stuffCost));
                     }
                     else
                     {
-                        result.Add(new ThingDefCountClass(replacementMaterial, cost));
+                        result.Add(new ThingDefCountClass(replacementMaterial, Mathf.RoundToInt(cost * GetCostModifierFor(material, replacementMaterial))));
                     }
                 }
                 else
@@ -156,13 +161,13 @@ namespace ArgonicCore.Utilities
                         if (actualMaterialCost > 0)
                         {
 
-                            result.Add(new ThingDefCountClass(replacementMaterial, actualMaterialCost));
+                            result.Add(new ThingDefCountClass(replacementMaterial, Mathf.RoundToInt(actualMaterialCost * GetCostModifierFor(material, replacementMaterial))));
                         }
                         result.Add(new ThingDefCountClass(callingThing.Stuff, stuffCost));
                     }
                     else
                     {
-                        result.Add(new ThingDefCountClass(replacementMaterial, cost));
+                        result.Add(new ThingDefCountClass(replacementMaterial, Mathf.RoundToInt(cost * GetCostModifierFor(material, replacementMaterial))));
                     }
                 }
                 else

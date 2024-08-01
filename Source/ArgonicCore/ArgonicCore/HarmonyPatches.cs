@@ -169,13 +169,13 @@ namespace ArgonicCore
                     }
                 }
             }
-            else
-            {
-                for (int i = 0; i < recipeDef.ingredients.Count; i++)
-                {
-                    // Check if the ingredient (Most likely chemfuel) is made of lead.
-                }
-            }
+            //else
+            //{
+            //    for (int i = 0; i < recipeDef.ingredients.Count; i++)
+            //    {
+            //        //Check if the ingredient (Most likely chemfuel) is made of lead.
+            //    }
+            //}
         }
 
         // Patch to yield special products. (That should not mess up the vanilla hardcoded butcher and smelt products)
@@ -251,7 +251,7 @@ namespace ArgonicCore
         {
             if (momentaryThing != null)
             {
-                Log.Warning($"Momentary thing is an instance of {momentaryThing.def.defName}, which is {momentaryThing}");
+                //Log.Warning($"Momentary thing is an instance of {momentaryThing.def.defName}, which is {momentaryThing}");
                 __result = MaterialExchangingUtility.GetCustomCostListFor(__result, momentaryThing);
 
                 //foreach (ThingDefCountClass c in __result)
@@ -332,11 +332,11 @@ namespace ArgonicCore
         private static void BlueprintCostList(Blueprint_Build __instance, ref List<ThingDefCountClass> __result)
         {
             __result = MaterialExchangingUtility.GetCustomCostListFor(__result, __instance);
-            Log.Warning($"{__instance} is requesting:");
-            foreach (ThingDefCountClass c in __result)
-            {
-                Log.Warning($"\t- {c.count}x {c.thingDef}");
-            }
+            //Log.Warning($"{__instance} is requesting:");
+            //foreach (ThingDefCountClass c in __result)
+            //{
+            //    Log.Warning($"\t- {c.count}x {c.thingDef}");
+            //}
         }
         #endregion
 
@@ -369,31 +369,31 @@ namespace ArgonicCore
         private static void FrameCostList(Frame __instance, ref List<ThingDefCountClass> __result)
         {
             __result = MaterialExchangingUtility.GetCustomCostListFor(__result, __instance);
-            Log.Warning($"{__instance} is requesting:");
-            foreach (ThingDefCountClass c in __result)
-            {
-                Log.Warning($"\t- {c.count}x {c.thingDef}");
-            }
+            //Log.Warning($"{__instance} is requesting:");
+            //foreach (ThingDefCountClass c in __result)
+            //{
+            //    Log.Warning($"\t- {c.count}x {c.thingDef}");
+            //}
         }
 
         //Upon destruction, spawn the materials this Building was built with.
-        [HarmonyTranspiler]
-        [HarmonyPatch(typeof(GenLeaving), nameof(GenLeaving.DoLeavingsFor), new Type[] { typeof(Thing), typeof(Map), typeof(DestroyMode), typeof(CellRect), typeof(Predicate<IntVec3>), typeof(List<Thing>) })]
-        private static IEnumerable<CodeInstruction> ReturnProperMaterials(IEnumerable<CodeInstruction> instructions)
-        {
-            foreach (CodeInstruction instruction in instructions)
-            {
-                yield return instruction;
+        //[HarmonyTranspiler]
+        //[HarmonyPatch(typeof(GenLeaving), nameof(GenLeaving.DoLeavingsFor), new Type[] { typeof(Thing), typeof(Map), typeof(DestroyMode), typeof(CellRect), typeof(Predicate<IntVec3>), typeof(List<Thing>) })]
+        //private static IEnumerable<CodeInstruction> ReturnProperMaterials(IEnumerable<CodeInstruction> instructions)
+        //{
+        //    foreach (CodeInstruction instruction in instructions)
+        //    {
+        //        yield return instruction;
 
-                if (instruction.Calls(AccessTools.Method(typeof(CostListCalculator), nameof(CostListCalculator.CostListAdjusted), new Type[] { typeof(Thing) })))
-                {
-                    yield return new CodeInstruction(OpCodes.Stloc_S, 12);
-                    yield return new CodeInstruction(OpCodes.Ldloc_S, 12);
-                    yield return new CodeInstruction(OpCodes.Ldarg_0);
-                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.GetCustomCostListFor), new Type[] { typeof(List<ThingDefCountClass>), typeof(Thing) }));
-                }
-            }
-        }
+        //        if (instruction.Calls(AccessTools.Method(typeof(CostListCalculator), nameof(CostListCalculator.CostListAdjusted), new Type[] { typeof(Thing) })))
+        //        {
+        //            yield return new CodeInstruction(OpCodes.Stloc_S, 12);
+        //            yield return new CodeInstruction(OpCodes.Ldloc_S, 12);
+        //            yield return new CodeInstruction(OpCodes.Ldarg_0);
+        //            yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.GetCustomCostListFor), new Type[] { typeof(List<ThingDefCountClass>), typeof(Thing) }));
+        //        }
+        //    }
+        //}
 
         // Transpiler to literally fix a line of code in the game that is nonsense.
         [HarmonyTranspiler]

@@ -29,22 +29,22 @@ namespace ArgonicCore.RecipeWorkers
 
         public override void ApplyOnPawn(Pawn pawn, BodyPartRecord part, Pawn billDoer, List<Thing> ingredients, Bill bill)
         {
+            float num;
+            num = Mathf.Lerp(0f, Mathf.Max(billDoer.skills.GetSkill(SkillDefOf.Medicine).Level, 1f), Rand.Range(0.2f, 0.8f));
             if (billDoer != null)
             {
                 TaleRecorder.RecordTale(TaleDefOf.DidSurgery, new object[] { billDoer, pawn });
                 if (PawnUtility.ShouldSendNotificationAbout(pawn) || PawnUtility.ShouldSendNotificationAbout(billDoer))
                 {
                     string text;
-                    text = "AC_MessageSuccesfullyTreatedHediff".Translate(billDoer.LabelShort, pawn.LabelShort, recipe.removesHediff.label.Named("HEDIFF"), billDoer.Named("SURGEON"), pawn.Named("PATIENT"));
+                    text = "AC_MessageSuccesfullyTreatedHediff".Translate(billDoer.LabelShort, pawn.LabelShort, recipe.removesHediff.label.Named("HEDIFF"), billDoer.Named("SURGEON"), pawn.Named("PATIENT"), num.Named("AMOUNT"));
                     Messages.Message(text, pawn, MessageTypeDefOf.PositiveEvent, true);
                 }
             }
             Hediff hediff = pawn.health.hediffSet.hediffs.Find((Hediff x) => x.def == recipe.removesHediff && x.Part == part && x.Visible);
-            float num;
-            num = Mathf.Lerp(0f, Mathf.Max(billDoer.skills.GetSkill(SkillDefOf.Medicine).Level, 1f), Rand.Range(0.2f, 0.8f));
             if (hediff != null)
             {
-                hediff.Severity -= num;
+                hediff.Severity -= num / 100f;
             }
         }
     }
