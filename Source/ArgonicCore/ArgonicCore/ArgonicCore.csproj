@@ -50,7 +50,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArgonicCore.cs" />
-    <Compile Include="Commands\Command_SelectMaterial.cs" />
     <Compile Include="Comps\CompCanGiveHediff.cs" />
     <Compile Include="Comps\CompContaminable.cs" />
     <Compile Include="Comps\CompCrate.cs" />
@@ -78,6 +77,9 @@
     <PackageReference Include="Lib.Harmony">
       <Version>2.3.3</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Commands\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
