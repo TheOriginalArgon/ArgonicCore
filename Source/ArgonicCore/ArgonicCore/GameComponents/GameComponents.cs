@@ -26,25 +26,22 @@ namespace ArgonicCore.GameComponents
             Instance = this;
         }
 
-        // Upon starting a new game.
         public override void StartedNewGame()
         {
             Init();
             base.StartedNewGame();
         }
 
-        // Upon loading a saved game.
         public override void LoadedGame()
         {
             Init();
             base.LoadedGame();
         }
 
-        // Set the instance of the game component to this one. Initializes dictionary.
         public void Init()
         {
             Instance = this;
-            if (optionalMaterialInUse == null) { optionalMaterialInUse = new Dictionary<Thing, InnerDict>(); } else { TryClearDictionary(); }
+            if (optionalMaterialInUse == null) { optionalMaterialInUse = new Dictionary<Thing, InnerDict>(); }
         }
 
         public override void GameComponentTick()
@@ -53,16 +50,14 @@ namespace ArgonicCore.GameComponents
             if (Find.TickManager.TicksGame % 2000 == 0)
             {
                 TryClearDictionary();
-                // DEBUG
-                //Log.Message("Dict has: " + optionalMaterialInUse.Count + " elements");
-                foreach (KeyValuePair<Thing, InnerDict> pair in optionalMaterialInUse)
-                {
-                    //Log.Message($"{pair.Key}");
-                    foreach (KeyValuePair<ThingDef, ThingDef> pair2 in pair.Value.materialValues)
-                    {
-                        //Log.Message($"\t - [{pair2.Key.defName}] is replaced with [{pair2.Value.defName}]");
-                    }
-                }
+                //foreach (KeyValuePair<Thing, InnerDict> pair in optionalMaterialInUse)
+                //{
+                //    Log.Message(pair.Key.def.defName);
+                //    foreach (KeyValuePair<ThingDef, ThingDef> pair2 in pair.Value.materialValues)
+                //    {
+                //        Log.Message(pair2.Key.defName + " is replaced with " + pair2.Value.defName);
+                //    }
+                //}
             }
         }
 
@@ -75,19 +70,14 @@ namespace ArgonicCore.GameComponents
 
         private void TryClearDictionary()
         {
-            List<Thing> removedThings = new List<Thing>();
             foreach (KeyValuePair<Thing, InnerDict> pair in optionalMaterialInUse)
             {
-                if (pair.Key == null || pair.Key.Destroyed || pair.Key.Discarded)
+                if (pair.Key == null || pair.Key.Destroyed)
                 {
-                    removedThings.Add(pair.Key);
+                    optionalMaterialInUse.Remove(pair.Key);
+                    //Log.Message("Discarded " + pair.Key.ToString() + ". No longer exists.");
+                    break;
                 }
-            }
-
-            foreach (Thing t in removedThings)
-            {
-                optionalMaterialInUse.Remove(t);
-                //Log.Message($"Thing {t} no longer exists. Removing...");
             }
         }
     }

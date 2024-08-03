@@ -33,7 +33,7 @@ namespace ArgonicCore.Hediffs
         public override void CompPostTick(ref float severityAdjustment)
         {
             base.CompPostTick(ref severityAdjustment);
-            if (Pawn != null && Pawn.IsHashIntervalTick((int)(5000f * intervalFactor * Props.poisonStability) + 1))
+            if (Pawn != null && Pawn.IsHashIntervalTick((int)(5000f * intervalFactor * Props.poisonStability)))
             {
                 parent.Severity += Rand.Range(0.085f, 0.185f) * Props.poisonStrength;
             }
