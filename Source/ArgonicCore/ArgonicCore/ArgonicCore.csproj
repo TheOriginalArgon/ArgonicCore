@@ -68,6 +68,7 @@
     <Compile Include="Hediffs\Hediff_PoisonOld.cs" />
     <Compile Include="IngestionOutcomes\IngestionOutcomeDoer_CanGiveHediff.cs" />
     <Compile Include="IngestionOutcomes\IngestionOutcomeDoer_GiveHediffIfContaminated.cs" />
+    <Compile Include="IngestionOutcomes\IngestionOutcomeDoer_HediffsPerQuality.cs" />
     <Compile Include="ModExtensions\RecipeDefExtensions.cs" />
     <Compile Include="ModExtensions\ThingDefExtensions.cs" />
     <Compile Include="PatchOperations\PatchOperationDistributeCost.cs" />

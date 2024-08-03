@@ -17,4 +17,10 @@ namespace ArgonicCore.ModExtensions
     {
         public SpecialProductTypeDef productTypeDef;
     }
+
+    // Add to items which inherit quality from an ingredient.
+    public class ThingDefExtension_InheritsQuality : DefModExtension
+    {
+        public ThingDef keyIngredient;
+    }
 }

@@ -217,6 +217,37 @@ namespace ArgonicCore
                 }
             }
         }
+
+        private static List<Thing> temp_ingredients;
+        private static Pawn temp_worker;
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(GenRecipe), "MakeRecipeProducts")]
+        private static void RegisterIngredients(Pawn worker, List<Thing> ingredients)
+        {
+            temp_ingredients = ingredients;
+            temp_worker = worker;
+        }
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(GenRecipe), "PostProcessProduct")]
+        private static void InheritQuality(Thing __result, Pawn worker)
+        {
+            if (__result.HasComp<CompQuality>() && __result.def.HasModExtension<ThingDefExtension_InheritsQuality>())
+            {
+                ThingDefExtension_InheritsQuality ext = __result.def.GetModExtension<ThingDefExtension_InheritsQuality>();
+                if (temp_ingredients.Any(x => x.def == ext.keyIngredient) && temp_worker == worker)
+                {
+                    Thing keyIng = temp_ingredients.First(x => x.def == ext.keyIngredient);
+                    if (keyIng.HasComp<CompQuality>())
+                    {
+                        __result.TryGetComp<CompQuality>().SetQuality(keyIng.TryGetComp<CompQuality>().Quality, ArtGenerationContext.Colony);
+                        temp_ingredients = null;
+                        temp_worker = null;
+                    }
+                }
+            }
+        }
     }
     #endregion
 
@@ -274,6 +305,7 @@ namespace ArgonicCore
         [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.GetGizmos))]
         private static IEnumerable<Gizmo> AddMaterialSelectors(IEnumerable<Gizmo> values, Blueprint_Build __instance)
         {
+
             bool compatibleLists = true;
             ThingDef thingDef = null;
             List<object> selectedObjects = Find.Selector.SelectedObjects;
@@ -298,8 +330,9 @@ namespace ArgonicCore
             List<ThingDefCountClass> costList = __instance.def.entityDefToBuild.CostList;
             foreach (Gizmo gizmo in values) { yield return gizmo; }
 
-            if (compatibleLists)
+            if (compatibleLists && costList.Any())
             {
+
                 if (__instance.Faction == Faction.OfPlayer)
                 {
                     TechLevel techLevel = MaterialExchangingUtility.GetHigherTechLevel(__instance.def.entityDefToBuild.researchPrerequisites);
@@ -314,8 +347,8 @@ namespace ArgonicCore
                         }
                     }
                 }
-            }
-            yield break;
+        }
+        yield break;
         }
 
         // Once a Blueprint is turned into a Frame, pass the corresponding replacement materials to it.

@@ -122,7 +122,7 @@ namespace ArgonicCore.Utilities
 
             //foreach (ThingDefCountClass c in result)
             //{
-            //    Log.Warning($"{c.thingDef} x{c.count}");
+            //    Log.Warning($" BLUEPRINT: {c.thingDef} x{c.count}");
             //}
 
             return result;
@@ -180,7 +180,7 @@ namespace ArgonicCore.Utilities
 
             //foreach (ThingDefCountClass c in result)
             //{
-            //    Log.Warning($"{c.thingDef} x{c.count}");
+            //    Log.Warning($"THING({callingThing.GetType().Name}): {c.thingDef} x{c.count}");
             //}
 
             return result;
