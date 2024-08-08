@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ArgonicCore.Commands;
 using ArgonicCore.Defs;
 using ArgonicCore.GameComponents;
-using ArgonicCore.ModExtensions;
+using MaterialReplacement.Defs;
 using RimWorld;
 using UnityEngine;
 using Verse;
