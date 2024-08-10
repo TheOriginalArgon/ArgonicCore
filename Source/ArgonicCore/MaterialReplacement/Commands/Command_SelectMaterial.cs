@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using ArgonicCore.Utilities;
+using MaterialReplacement.Utilities;
 using RimWorld;
 using UnityEngine;
 using Verse;
 
-namespace ArgonicCore.Commands
+namespace MaterialReplacement.Commands
 {
     public class Command_SelectMaterial : Command
     {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection.Emit;
 using ArgonicCore.Utilities;
 using HarmonyLib;
+using MaterialReplacement.Utilities;
 using RimWorld;
 using Verse;
 
@@ -39,24 +40,29 @@ namespace MaterialReplacement
             // CostList with replacement materials. TODO: Maybe now patch this directly and save two harmony methods.
             [HarmonyPostfix]
             [HarmonyPatch(typeof(CostListCalculator), "CostListAdjusted", new Type[] { typeof(BuildableDef), typeof(ThingDef), typeof(bool) })]
-            private static void ModifiedCostList(List<ThingDefCountClass> __result)
+            private static void ModifiedCostList(ref List<ThingDefCountClass> __result)
             {
                 if (momentaryThing != null)
                 {
-                    //Log.Warning($"Momentary thing is an instance of {momentaryThing.def.defName}, which is {momentaryThing}");
+                    Log.Warning($"Momentary thing is an instance of {momentaryThing.def.defName}, which is {momentaryThing}");
                     __result = MaterialExchangingUtility.GetCustomCostListFor(__result, momentaryThing);
 
-                    //foreach (ThingDefCountClass c in __result)
-                    //{
-                    //    Log.Warning($"{c.thingDef} x{c.count}");
-                    //}
+                    foreach (ThingDefCountClass c in __result)
+                    {
+                        Log.Warning($"{c.thingDef} x{c.count}");
+                    }
                     return;
                 }
-                else
-                {
-                    __result = MaterialExchangingUtility.MergeList(__result);
-                    return;
-                }
+                //else
+                //{
+                //    //__result = MaterialExchangingUtility.GetCustomCostListFor(__result, entDef);
+
+                //    //foreach (ThingDefCountClass c in __result)
+                //    //{
+                //    //    Log.Error($"{c.thingDef} x{c.count}");
+                //    //}
+                //    return;
+                //}
             }
 
             #region Blueprint Handling
@@ -91,7 +97,7 @@ namespace MaterialReplacement
                 List<ThingDefCountClass> costList = __instance.def.entityDefToBuild.CostList;
                 foreach (Gizmo gizmo in values) { yield return gizmo; }
 
-                if (compatibleLists && costList.Any())
+                if (compatibleLists && !costList.NullOrEmpty())
                 {
 
                     if (__instance.Faction == Faction.OfPlayer)
@@ -126,7 +132,7 @@ namespace MaterialReplacement
             private static void BlueprintCostList(Blueprint_Build __instance, ref List<ThingDefCountClass> __result)
             {
                 __result = MaterialExchangingUtility.GetCustomCostListFor(__result, __instance);
-                //Log.Warning($"{__instance} is requesting:");
+                Log.Warning($"{__instance} is requesting:");
                 //foreach (ThingDefCountClass c in __result)
                 //{
                 //    Log.Warning($"\t- {c.count}x {c.thingDef}");

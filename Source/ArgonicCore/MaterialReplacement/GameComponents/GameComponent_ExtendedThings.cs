@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using RimWorld;
 using Verse;
 
-namespace ArgonicCore.GameComponents
+namespace MaterialReplacement.GameComponents
 {
     public class GameComponent_ExtendedThings : GameComponent
     {
@@ -55,14 +55,14 @@ namespace ArgonicCore.GameComponents
                 TryClearDictionary();
                 // DEBUG
                 //Log.Message("Dict has: " + optionalMaterialInUse.Count + " elements");
-                foreach (KeyValuePair<Thing, InnerDict> pair in optionalMaterialInUse)
-                {
-                    //Log.Message($"{pair.Key}");
-                    foreach (KeyValuePair<ThingDef, ThingDef> pair2 in pair.Value.materialValues)
-                    {
-                        //Log.Message($"\t - [{pair2.Key.defName}] is replaced with [{pair2.Value.defName}]");
-                    }
-                }
+                //foreach (KeyValuePair<Thing, InnerDict> pair in optionalMaterialInUse)
+                //{
+                //    Log.Message($"{pair.Key}");
+                //    foreach (KeyValuePair<ThingDef, ThingDef> pair2 in pair.Value.materialValues)
+                //    {
+                //        Log.Message($"\t - [{pair2.Key.defName}] is replaced with [{pair2.Value.defName}]");
+                //    }
+                //}
             }
         }
 

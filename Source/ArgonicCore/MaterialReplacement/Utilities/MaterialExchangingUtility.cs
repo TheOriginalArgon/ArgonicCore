@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using ArgonicCore.Commands;
-using ArgonicCore.Defs;
-using ArgonicCore.GameComponents;
+using MaterialReplacement.Commands;
 using MaterialReplacement.Defs;
+using MaterialReplacement.GameComponents;
 using RimWorld;
 using UnityEngine;
 using Verse;
 
-namespace ArgonicCore.Utilities
+namespace MaterialReplacement.Utilities
 {
     public static class MaterialExchangingUtility
     {
@@ -83,7 +82,12 @@ namespace ArgonicCore.Utilities
         {
             List<ThingDefCountClass> result = new List<ThingDefCountClass>();
 
-            // TODO: Implement material cost modifiers.
+            //Log.WarningOnce($"{callingThing} is {callingThing.def.defName} and its stuff is {callingThing.Stuff}", 1);
+            //foreach (ThingDefCountClass c in list)
+            //{
+            //    Log.Error($"BLUEPRINT({callingThing.GetType().Name}): {c.thingDef} x{c.count}");
+            //}
+
             for (int i = 0; i < list.Count; i++)
             {
                 ThingDef material = list[i].thingDef;
@@ -131,8 +135,11 @@ namespace ArgonicCore.Utilities
             List<ThingDefCountClass> result = new List<ThingDefCountClass>();
 
             //Log.WarningOnce($"{callingThing} is {callingThing.def.defName} and its stuff is {callingThing.Stuff}", 1);
+            //foreach (ThingDefCountClass c in list)
+            //{
+            //    Log.Error($"THING({callingThing.GetType().Name}): {c.thingDef} x{c.count}");
+            //}
 
-            // TODO: Implement material cost modifiers.
             for (int i = 0; i < list.Count; i++)
             {
                 ThingDef material = list[i].thingDef;
