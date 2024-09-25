@@ -44,13 +44,13 @@ namespace MaterialReplacement
             {
                 if (momentaryThing != null)
                 {
-                    Log.Warning($"Momentary thing is an instance of {momentaryThing.def.defName}, which is {momentaryThing}");
+                    //Log.Warning($"Momentary thing is an instance of {momentaryThing.def.defName}, which is {momentaryThing}");
                     __result = MaterialExchangingUtility.GetCustomCostListFor(__result, momentaryThing);
 
-                    foreach (ThingDefCountClass c in __result)
-                    {
-                        Log.Warning($"{c.thingDef} x{c.count}");
-                    }
+                    //foreach (ThingDefCountClass c in __result)
+                    //{
+                    //    Log.Warning($"{c.thingDef} x{c.count}");
+                    //}
                     return;
                 }
                 //else
@@ -106,7 +106,7 @@ namespace MaterialReplacement
                         List<ThingDef> replacementMaterials;
                         for (int i = 0; i < costList.Count; i++)
                         {
-
+                            //Log.Error("Like and subscribe or else you're doomed to have red errors forever!");
                             // If there are any materials that can replace the current one.
                             if (MaterialExchangingUtility.ExistMaterialsToReplaceAtTechLevel(costList[i].thingDef, techLevel, out replacementMaterials))
                             {
@@ -132,7 +132,7 @@ namespace MaterialReplacement
             private static void BlueprintCostList(Blueprint_Build __instance, ref List<ThingDefCountClass> __result)
             {
                 __result = MaterialExchangingUtility.GetCustomCostListFor(__result, __instance);
-                Log.Warning($"{__instance} is requesting:");
+                //Log.Warning($"{__instance} is requesting:");
                 //foreach (ThingDefCountClass c in __result)
                 //{
                 //    Log.Warning($"\t- {c.count}x {c.thingDef}");

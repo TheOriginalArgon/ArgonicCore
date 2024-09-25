@@ -160,14 +160,15 @@ namespace ArgonicCore
 
                 if (Rand.Chance(extension.chance))
                 {
+                    float sv = extension.severity * Mathf.Max(1f - worker.GetStatValue(StatDefOf.ToxicEnvironmentResistance), 0f);
                     if (!worker.health.hediffSet.HasHediff(extension.hediff))
                     {
                         worker.health.AddHediff(extension.hediff);
-                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += extension.severity;
+                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += sv;
                     }
                     else
                     {
-                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += extension.severity;
+                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += sv;
                     }
                 }
             }

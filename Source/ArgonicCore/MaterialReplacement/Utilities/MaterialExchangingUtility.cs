@@ -39,10 +39,12 @@ namespace MaterialReplacement.Utilities
 
             if (techLevels.Any())
             {
+                //Log.Warning($"{(TechLevel)techLevels.Max()}");
                 return (TechLevel)techLevels.Max();
             }
             else
             {
+                //Log.Warning("Defaulted to Animal");
                 return TechLevel.Animal;
             }
         }

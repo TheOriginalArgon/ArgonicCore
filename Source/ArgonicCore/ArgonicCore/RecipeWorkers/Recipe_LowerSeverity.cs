@@ -16,12 +16,12 @@ namespace ArgonicCore.RecipeWorkers
             if (!base.AvailableOnNow(thing, part)) return false;
             if (!(thing is Pawn pawn))
             {
-                Log.Warning($"This recipe is not available for {thing.def.defName}");
+                //Log.Warning($"This recipe is not available for {thing.def.defName}");
                 return false;
             }
             if (pawn.health.hediffSet.HasHediff(recipe.removesHediff))
             {
-                Log.Warning($"This recipe is available for {pawn.Name}");
+                //Log.Warning($"This recipe is available for {pawn.Name}");
                 return true;
             }
             return false;
