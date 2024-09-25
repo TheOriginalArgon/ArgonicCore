@@ -33,7 +33,8 @@
                         extracted = 30;
                         return 50;
                     default:
-                        extracted = amount / 2;
+                        extracted = amount / 3;
+                        if (extracted <= 0) { extracted = 1; }
                         return amount - extracted;
                 }
             }
@@ -67,8 +68,14 @@
                         return 30;
                     default:
                         extracted = amount / 2;
+                        if (extracted <= 0) { extracted = 1; }
                         return amount - extracted;
                 }
+            }
+            if (splitMode == "replace")
+            {
+                extracted = amount;
+                return 0;
             }
             extracted = 0;
             return amount;

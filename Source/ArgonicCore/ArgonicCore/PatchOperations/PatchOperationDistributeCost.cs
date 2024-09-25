@@ -14,6 +14,7 @@ namespace ArgonicCore.PatchOperations
         protected string newMaterial;
         protected string splitMode;
         protected int minimum = 1;
+        protected bool logging = false;
 
         protected override bool ApplyWorker(XmlDocument xml)
         {
@@ -26,13 +27,33 @@ namespace ArgonicCore.PatchOperations
                 if (Convert.ToInt32(node.InnerText) > minimum)
                 {
                     result = true;
+                    bool removeFlag = false;
                     int originalAmount = Convert.ToInt32(node.InnerText);
                     originalAmount = SplitUtility.Split(splitMode, originalAmount, out int splitAmount);
                     XmlNode newMaterialNode = node.OwnerDocument.CreateElement(newMaterial);
-                    newMaterialNode.InnerXml = node.InnerXml;
+                    //newMaterialNode.InnerXml = node.InnerXml;
                     newMaterialNode.InnerText = splitAmount.ToString();
-                    node.InnerText = originalAmount.ToString();
+                    if (originalAmount > 0)
+                    {
+                        node.InnerText = originalAmount.ToString();
+                        if (logging)
+                        {
+                            Log.Warning($"{originalAmount} is what left of {node.Name}");
+                        }
+                    }
+                    else
+                    {
+                        removeFlag = true;
+                    }
                     node.ParentNode.InsertBefore(newMaterialNode, node);
+                    if (removeFlag)
+                    {
+                        node.ParentNode.RemoveChild(node);
+                    }
+                    if (logging)
+                    {
+                        Log.Warning($"{splitAmount} is what was cut and put in {newMaterialNode.Name}");
+                    }
                 }
             }
             return result;

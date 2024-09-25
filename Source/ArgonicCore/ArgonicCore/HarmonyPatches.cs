@@ -38,18 +38,19 @@ namespace ArgonicCore
 
                     insertionIndex_01 = i - 1;
 
-                    var newInstructions_01 = new List<CodeInstruction>();
-
-                    newInstructions_01.Add(new CodeInstruction(OpCodes.Conv_R4));
-                    newInstructions_01.Add(new CodeInstruction(OpCodes.Ldloc_1));
-                    newInstructions_01.Add(new CodeInstruction(OpCodes.Ldstr, "ArgonicCore_FuelPower"));
-                    newInstructions_01.Add(new CodeInstruction(OpCodes.Ldc_I4_1));
-                    newInstructions_01.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(DefDatabase<StatDef>), nameof(DefDatabase<StatDef>.GetNamed), new Type[] { typeof(string), typeof(bool) })));
-                    newInstructions_01.Add(new CodeInstruction(OpCodes.Ldc_I4_1));
-                    newInstructions_01.Add(new CodeInstruction(OpCodes.Ldc_I4_M1));
-                    newInstructions_01.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(StatExtension), nameof(StatExtension.GetStatValue), new Type[] { typeof(Thing), typeof(StatDef), typeof(bool), typeof(int) })));
-                    newInstructions_01.Add(new CodeInstruction(OpCodes.Div));
-                    newInstructions_01.Add(new CodeInstruction(OpCodes.Conv_I4));
+                    var newInstructions_01 = new List<CodeInstruction>
+                    {
+                        new CodeInstruction(OpCodes.Conv_R4),
+                        new CodeInstruction(OpCodes.Ldloc_1),
+                        new CodeInstruction(OpCodes.Ldstr, "ArgonicCore_FuelPower"),
+                        new CodeInstruction(OpCodes.Ldc_I4_1),
+                        new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(DefDatabase<StatDef>), nameof(DefDatabase<StatDef>.GetNamed), new Type[] { typeof(string), typeof(bool) })),
+                        new CodeInstruction(OpCodes.Ldc_I4_1),
+                        new CodeInstruction(OpCodes.Ldc_I4_M1),
+                        new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(StatExtension), nameof(StatExtension.GetStatValue), new Type[] { typeof(Thing), typeof(StatDef), typeof(bool), typeof(int) })),
+                        new CodeInstruction(OpCodes.Div),
+                        new CodeInstruction(OpCodes.Conv_I4)
+                    };
 
                     if (insertionIndex_01 != -1)
                     {
@@ -69,16 +70,17 @@ namespace ArgonicCore
                 }
             }
 
-            var newInstructions_02 = new List<CodeInstruction>();
-
-            newInstructions_02.Add(new CodeInstruction(OpCodes.Ldloc_1));
-            newInstructions_02.Add(new CodeInstruction(OpCodes.Ldstr, "ArgonicCore_FuelPower"));
-            newInstructions_02.Add(new CodeInstruction(OpCodes.Ldc_I4_1));
-            newInstructions_02.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(DefDatabase<StatDef>), nameof(DefDatabase<StatDef>.GetNamed), new Type[] { typeof(string), typeof(bool) })));
-            newInstructions_02.Add(new CodeInstruction(OpCodes.Ldc_I4_1));
-            newInstructions_02.Add(new CodeInstruction(OpCodes.Ldc_I4_M1));
-            newInstructions_02.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(StatExtension), nameof(StatExtension.GetStatValue), new Type[] { typeof(Thing), typeof(StatDef), typeof(bool), typeof(int) })));
-            newInstructions_02.Add(new CodeInstruction(OpCodes.Mul));
+            var newInstructions_02 = new List<CodeInstruction>
+            {
+                new CodeInstruction(OpCodes.Ldloc_1),
+                new CodeInstruction(OpCodes.Ldstr, "ArgonicCore_FuelPower"),
+                new CodeInstruction(OpCodes.Ldc_I4_1),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(DefDatabase<StatDef>), nameof(DefDatabase<StatDef>.GetNamed), new Type[] { typeof(string), typeof(bool) })),
+                new CodeInstruction(OpCodes.Ldc_I4_1),
+                new CodeInstruction(OpCodes.Ldc_I4_M1),
+                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(StatExtension), nameof(StatExtension.GetStatValue), new Type[] { typeof(Thing), typeof(StatDef), typeof(bool), typeof(int) })),
+                new CodeInstruction(OpCodes.Mul)
+            };
 
             if (insertionIndex_02 != -1)
             {
@@ -158,14 +160,15 @@ namespace ArgonicCore
 
                 if (Rand.Chance(extension.chance))
                 {
+                    float sv = extension.severity * Mathf.Max(1f - worker.GetStatValue(StatDefOf.ToxicEnvironmentResistance), 0f);
                     if (!worker.health.hediffSet.HasHediff(extension.hediff))
                     {
                         worker.health.AddHediff(extension.hediff);
-                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += extension.severity;
+                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += sv;
                     }
                     else
                     {
-                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += extension.severity;
+                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += sv;
                     }
                 }
             }
