@@ -154,7 +154,7 @@ namespace ArgonicCore
         [HarmonyPatch(typeof(GenRecipe), nameof(GenRecipe.MakeRecipeProducts))]
         private static void AddHediffPostRecipeCompletion(RecipeDef recipeDef, Pawn worker)
         {
-            if (recipeDef.HasModExtension<RecipeDefExtension_HediffOnFinish>())
+            if (recipeDef.HasModExtension<RecipeDefExtension_HediffOnFinish>() && worker.IsColonist)
             {
                 RecipeDefExtension_HediffOnFinish extension = recipeDef.GetModExtension<RecipeDefExtension_HediffOnFinish>();
 
