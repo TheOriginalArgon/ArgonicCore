@@ -22,7 +22,6 @@ namespace ArgonicCore.Hediffs
         public HediffCompProperties_Poison Props => (HediffCompProperties_Poison)props;
 
         private float intervalFactor;
-        private float cureChance;
 
         public override void CompPostMake()
         {

@@ -19,7 +19,7 @@ namespace ArgonicCore.RecipeWorkers
                 //Log.Warning($"This recipe is not available for {thing.def.defName}");
                 return false;
             }
-            if (pawn.health.hediffSet.HasHediff(recipe.removesHediff))
+            if (pawn.health.hediffSet.HasHediff(recipe.removesHediff, true))
             {
                 //Log.Warning($"This recipe is available for {pawn.Name}");
                 return true;
@@ -45,6 +45,10 @@ namespace ArgonicCore.RecipeWorkers
             if (hediff != null)
             {
                 hediff.Severity -= num / 100f;
+                if (hediff.Severity < 0.15f && Rand.Range(0f, 1f) <= 0.25f)
+                {
+                    pawn.health.hediffSet.hediffs.Remove(hediff);
+                }
             }
         }
     }

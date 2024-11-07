@@ -47,7 +47,7 @@ namespace ArgonicCore.Comps
 
         public override void CompTickRare()
         {
-            if (IsBaseContaminator)
+            if (IsBaseContaminator && parent.IsInAnyStorage() && parent.Spawned)
             {
                 for (int i = 0; i < 4; i++)
                 {
