@@ -1,0 +1,15 @@
+<LanguageData>
+
+
+    <String_CrateContents>Contents</String_CrateContents>
+    <String_CrateContentUnknown>Unknown</String_CrateContentUnknown>
+    <String_Contaminated>Contaminated</String_Contaminated>
+
+    <AC_MaterialTo>Use {0}.</AC_MaterialTo>
+    <AC_MaterialUsing>Build with {0}.</AC_MaterialUsing>
+    <AC_SelectMaterial>Select material</AC_SelectMaterial>
+
+    <AC_MessageSuccesfullyTreatedHediff>{SURGEON} successfully treated {PATIENT} and lowered the severity of {HEDIFF} by {AMOUNT}%.</AC_MessageSuccesfullyTreatedHediff>
+
+
+</LanguageData>

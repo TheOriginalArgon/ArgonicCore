@@ -59,7 +59,7 @@ namespace ArgonicCore.IngestionOutcomes
                 {
                     initialSeverity = hediffDefs[index].initialSeverity;
                 }
-                AddictionUtility.ModifyChemicalEffectForToleranceAndBodySize_NewTemp(pawn, toleranceChemical, ref initialSeverity, multiplyByGeneToleranceFactors, divideByBodySize);
+                AddictionUtility.ModifyChemicalEffectForToleranceAndBodySize(pawn, toleranceChemical, ref initialSeverity, multiplyByGeneToleranceFactors, divideByBodySize);
                 hediff.Severity = initialSeverity;
                 pawn.health.AddHediff(hediff, null, null, null);
             }

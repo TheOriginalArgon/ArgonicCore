@@ -21,4 +21,21 @@ namespace ArgonicCore.ModExtensions
     {
         public SpecialProductTypeDef productTypeDef;
     }
+
+    // Add to recipes whose product can vary depending on quality (but the product needs individual defs for quality.)
+    public class RecipeDefExtension_QualityProduct : DefModExtension
+    {
+        public List<ThingDef> qualityProducts;
+    }
+
+    // Add to recipes that are available only when the parent's CompTemperatureWorkstation has a certain temperature.
+    public class RecipeDefExtension_TempRecipe : DefModExtension
+    {
+        public int minTemperature;
+        public int maxTemperature = 9999;
+    }
+
+    /* NOTE: It would be wise to know if all those different def extensions should be merged into an individual one. At the momen't I'm unaware
+     * if this affects performance in some way or if it just feels like clutter but doesn't really affect much.
+     */
 }

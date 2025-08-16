@@ -182,42 +182,22 @@ namespace ArgonicCore
         }
 
         // Patch to yield special products. (That should not mess up the vanilla hardcoded butcher and smelt products)
-        static MethodInfo postProcessProduct = AccessTools.Method(typeof(GenRecipe), "PostProcessProduct");
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(GenRecipe), nameof(GenRecipe.MakeRecipeProducts))]
         private static IEnumerable<Thing> MakeSpecialProducts(IEnumerable<Thing> values, RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingDefStyle style, int? overrideGraphicIndex)
         {
-            if (!recipeDef.HasModExtension<RecipeDefExtension_SpecialProducts>())
+            if (recipeDef.HasModExtension<RecipeDefExtension_SpecialProducts>())
             {
-                foreach (Thing v in values)
-                {
-                    yield return v;
-                }
+                return ArgonicUtility.RandomProductYield(recipeDef, worker, ingredients, precept, style, overrideGraphicIndex);
+            }
+            if (recipeDef.HasModExtension<RecipeDefExtension_QualityProduct>())
+            {
+                return ArgonicUtility.GetQualityModifiedThings(recipeDef, worker, ingredients, precept, style, overrideGraphicIndex);
             }
             else
             {
-                for (int i = 0; i < ingredients.Count; i++)
-                {
-                    if (!ingredients[i].def.HasModExtension<ThingDefExtension_SpecialProducts>())
-                    {
-                        Log.Error("Error: " + ingredients[i].def.defName + " doesn't have ThingDefExtension_SpecialProducts.");
-                    }
-                    else
-                    {
-                        ThingDefExtension_SpecialProducts extension = ingredients[i].def.GetModExtension<ThingDefExtension_SpecialProducts>();
-                        for (int j = 0; j < extension.productTypeDef.products.Count; j++)
-                        {
-                            int num = Rand.Range(extension.productTypeDef.products[j].Min, extension.productTypeDef.products[j].Max);
-                            if (num > 0)
-                            {
-                                Thing product = ThingMaker.MakeThing(extension.productTypeDef.products[j].thingDef, null);
-                                product.stackCount = num;
-                                yield return (Thing)postProcessProduct.Invoke(null, new object[] { product, recipeDef, worker, precept, style, overrideGraphicIndex });
-                            }
-                        }
-                    }
-                }
+                return values;
             }
         }
 
