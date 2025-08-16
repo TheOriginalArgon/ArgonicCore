@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -54,8 +55,6 @@
     <Compile Include="Comps\CompContaminable.cs" />
     <Compile Include="Comps\CompCrate.cs" />
     <Compile Include="Comps\CompRuinOverTime.cs" />
-    <Compile Include="Comps\CompTemperatureFacility.cs" />
-    <Compile Include="Comps\CompTemperatureWorkstation.cs" />
     <Compile Include="CompUseEffect_SpawnCrateContents.cs" />
     <Compile Include="CustomDefs.cs" />
     <Compile Include="Defs\Defs.cs" />
@@ -70,16 +69,15 @@
     <Compile Include="PatchOperations\PatchOperationDistributeCost.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RecipeWorkers\Recipe_LowerSeverity.cs" />
-    <Compile Include="RecipeWorkers\Recipe_TempDependant.cs" />
     <Compile Include="Utilities\ArgonicUtility.cs" />
     <Compile Include="Utilities\SplitUtility.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Krafs.Rimworld.Ref">
-      <Version>1.6.4503-beta</Version>
+      <Version>1.6.4553-beta</Version>
     </PackageReference>
-    <PackageReference Include="Lib.Harmony">
-      <Version>2.3.6</Version>
+    <PackageReference Include="Lib.Harmony.Ref">
+      <Version>2.3.7-prerelease</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

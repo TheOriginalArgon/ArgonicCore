@@ -195,6 +195,9 @@ namespace MaterialReplacement
             //    }
             //}
 
+            // Resets the selected material to the selected one if the construction fails.
+            // TODO
+
             // Transpiler to literally fix a line of code in the game that is nonsense.
             [HarmonyTranspiler]
             [HarmonyPatch(typeof(Frame), nameof(Frame.GetInspectString))]

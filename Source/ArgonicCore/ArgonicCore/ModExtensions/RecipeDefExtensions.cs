@@ -12,6 +12,7 @@ namespace ArgonicCore.ModExtensions
     public class RecipeDefExtension_HediffOnFinish : DefModExtension
     {
         public HediffDef hediff;
+        public bool affectsMechanoids = false;
         public float severity;
         public float chance = 1.0f;
     }
