@@ -11,5 +11,8 @@
 
     <AC_MessageSuccesfullyTreatedHediff>{SURGEON} successfully treated {PATIENT} and lowered the severity of {HEDIFF} by {AMOUNT}%.</AC_MessageSuccesfullyTreatedHediff>
 
+    <TM_InspectStringRuining>Ruining in {0}</TM_InspectStringRuining>
+    <TM_MessageRuinedInStorage>{0} has ruined in storage</TM_MessageRuinedInStorage>
+
 
 </LanguageData>
