@@ -1,4 +1,5 @@
-﻿using ArgonicCore.ModExtensions;
+﻿using ArgonicCore.Comps;
+using ArgonicCore.ModExtensions;
 using HarmonyLib;
 using RimWorld;
 using System;
@@ -8,6 +9,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Verse;
+using Verse.AI;
 
 namespace ArgonicCore.Utilities
 {
@@ -65,5 +67,103 @@ namespace ArgonicCore.Utilities
                 yield return ThingMaker.MakeThing(thingDef, null);
             }
         }
+
+        #region Wall Coating
+
+        public static List<Thing> FindNearbyResource(Pawn pawn, ThingDef resource, bool forced = false)
+        {
+            List<Thing> list = new List<Thing>();
+            List<Thing> list2 = pawn.Map.listerThings.ThingsOfDef(resource);
+            for (int i = 0; i < list2.Count; i++)
+            {
+                if (!list2[i].IsForbidden(pawn) && pawn.CanReserveAndReach(list2[i], PathEndMode.ClosestTouch, Danger.Deadly, 1, -1, null, forced))
+                {
+                    list.Add(list2[i]);
+                }
+            }
+            return list;
+        }
+
+
+        // Might eventually need. This will only work if I make coated walls work as the smoothed walls do.
+
+        //private static bool IsBlocked(IntVec3 pos, Map map)
+        //{
+        //    if (!pos.InBounds(map))
+        //    {
+        //        return false;
+        //    }
+        //    if (pos.Walkable(map))
+        //    {
+        //        return false;
+        //    }
+        //    Building edifice = pos.GetEdifice(map);
+        //    if (edifice == null)
+        //    {
+        //        return false;
+        //    }
+        //    if (!edifice.def.IsSmoothed)
+        //    {
+        //        return edifice.def.building.isNaturalRock;
+        //    }
+        //    return true;
+        //}
+
+        //public static void Notify_CoatedByPawn(Thing t, Pawn p)
+        //{
+        //    for (int i = 0; i < GenAdj.CardinalDirections.Length; i++)
+        //    {
+        //        IntVec3 c = t.Position + GenAdj.CardinalDirections[i];
+        //        if (!c.InBounds(t.Map))
+        //        {
+        //            continue;
+        //        }
+        //        Building edifice = c.GetEdifice(t.Map);
+        //        if (edifice == null || !edifice.def.HasComp<CompCoatableWall>())
+        //        {
+        //            continue;
+        //        }
+        //        bool flag = true;
+        //        int num = 0;
+        //        for (int j = 0; j < GenAdj.CardinalDirections.Length; j++)
+        //        {
+        //            IntVec3 intVec = edifice.Position + GenAdj.CardinalDirections[j];
+        //            if (!IsBlocked(intVec, t.Map))
+        //            {
+        //                flag = false;
+        //                break;
+        //            }
+        //            Building edifice2 = intVec.GetEdifice(t.Map);
+        //            if (edifice2 != null && edifice2.def.IsSmoothed)
+        //            {
+        //                num++;
+        //            }
+        //        }
+        //        if (!flag || num < 2)
+        //        {
+        //            continue;
+        //        }
+        //        for (int k = 0; k < GenAdj.DiagonalDirections.Length; k++)
+        //        {
+        //            if (!IsBlocked(edifice.Position + GenAdj.DiagonalDirections[k], t.Map))
+        //            {
+        //                CoatWall(edifice, p);
+        //                break;
+        //            }
+        //        }
+        //    }
+        //}
+
+        public static Thing CoatWall(Thing target, Pawn coater)
+        {
+            Map map = target.Map;
+            target.Destroy(DestroyMode.WillReplace);
+            Thing thing = ThingMaker.MakeThing(target.TryGetComp<CompCoatableWall>().Props.coatedThingDef);
+            thing.SetFaction(coater?.Faction ?? Faction.OfPlayer);
+            GenSpawn.Spawn(thing, target.Position, map, target.Rotation);
+            return thing;
+        }
+
+        #endregion
     }
 }
