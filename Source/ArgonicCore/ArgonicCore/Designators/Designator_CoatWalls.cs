@@ -1,12 +1,7 @@
 ﻿using ArgonicCore.Comps;
-using ArgonicCore.Utilities;
+using ArgonicCore.ModExtensions;
 using RimWorld;
-using RimWorld.BaseGen;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using Verse;
 
@@ -31,7 +26,7 @@ namespace ArgonicCore.Designators
 
         public override AcceptanceReport CanDesignateThing(Thing t)
         {
-            if (t.def.building == null || !t.def.HasComp<CompCoatableWall>())
+            if (t.def.building == null || !t.def.HasModExtension<ThingDefExtension_CoatableWall>())
             {
                 return false;
             }

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using Verse;
@@ -15,6 +16,18 @@ namespace ArgonicCore.Utilities
 {
     public static class ArgonicUtility
     {
+
+        //public static IEnumerable<Thing> ProcessPatchedProducts(RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingDefStyle style, int? overrideGraphicIndex)
+        //{
+
+        //}
+
+        /*
+         *  Write a new patch for GenRecipe.MakeRecipeProducts that checks if the recipe has a RecipeDefExtension_SpecialProducts.
+         *  Add a for loop just like the vanilla one that checks if the ingredient has a ThingDefExtension_SpecialProducts.
+         *  Call random products only if the ingredient has the specific settings for that.
+         *  
+         */
 
         static MethodInfo postProcessProduct = AccessTools.Method(typeof(GenRecipe), "PostProcessProduct");
 
@@ -31,11 +44,33 @@ namespace ArgonicCore.Utilities
                     ThingDefExtension_SpecialProducts extension = ingredients[i].def.GetModExtension<ThingDefExtension_SpecialProducts>();
                     for (int j = 0; j < extension.productTypeDef.products.Count; j++)
                     {
-                        int num = Rand.Range(extension.productTypeDef.products[j].Min, extension.productTypeDef.products[j].Max);
+                        int num = Rand.Range(extension.productTypeDef.randomProducts[j].Min, extension.productTypeDef.randomProducts[j].Max);
                         if (num > 0)
                         {
                             Thing product = ThingMaker.MakeThing(extension.productTypeDef.products[j].thingDef, null);
                             product.stackCount = num;
+                            yield return (Thing)postProcessProduct.Invoke(null, new object[] { product, recipeDef, worker, precept, style, overrideGraphicIndex });
+                        }
+                    }
+                }
+            }
+        }
+
+        public static IEnumerable<Thing> ProcessArgonicSpecialProducts(RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingDefStyle style, int? overrideGraphicIndex)
+        {
+            RecipeDefExtension_SpecialProducts extension = recipeDef.GetModExtension<RecipeDefExtension_SpecialProducts>();
+
+            for (int i = 0; i < extension.specialProductKeys.Count; i++)
+            {
+                for (int j = 0; j < ingredients.Count; j++)
+                {
+                    Thing ingredient = ingredients[j];
+                    ThingDefExtension_SpecialProducts ingredientExtension = ingredient.def.GetModExtension<ThingDefExtension_SpecialProducts>();
+
+                    foreach (string tag in extension.specialProductKeys)
+                    {
+                        foreach (Thing product in ingredientExtension.GetSpecialProducts(tag, worker, extension.usesEfficiency, extension.efficiencySkill))
+                        {
                             yield return (Thing)postProcessProduct.Invoke(null, new object[] { product, recipeDef, worker, precept, style, overrideGraphicIndex });
                         }
                     }
@@ -67,6 +102,35 @@ namespace ArgonicCore.Utilities
                 yield return ThingMaker.MakeThing(thingDef, null);
             }
         }
+
+        public static float ProcessorProgressRateAtConditions(float value, float valueMin, float valueMax)
+        {
+            if (value < valueMin || value > valueMax)
+            {
+                return 0f;
+            }
+            return 1f;
+        }
+
+        //public static float ProcessorProgressRateAtLightLevel(float light, float lightMin, float lightMax)
+        //{
+        //    if (light <= lightMin || light >= lightMax) return 0f;
+        //    float mid = (lightMin + lightMax) / 2f;
+        //    float halfRange = (lightMax - lightMin) / 2f;
+        //    float distanceFromMid = Math.Abs(light - mid);
+
+        //    return Math.Clamp(1f - (distanceFromMid / halfRange), 0f, 1f);
+        //}
+
+        //public static float ProcessorProgressRateAtRainfall(float rain, float rainMin, float rainMax)
+        //{
+        //    if (rain <= rainMin || rain >= rainMax) return 0f;
+        //    float mid = (rainMin + rainMax) / 2f;
+        //    float halfRange = (rainMax - rainMin) / 2f;
+        //    float distanceFromMid = Math.Abs(rain - mid);
+
+        //    return Math.Clamp(1f - (distanceFromMid / halfRange), 0f, 1f);
+        //}
 
         #region Wall Coating
 
@@ -158,12 +222,23 @@ namespace ArgonicCore.Utilities
         {
             Map map = target.Map;
             target.Destroy(DestroyMode.WillReplace);
-            Thing thing = ThingMaker.MakeThing(target.TryGetComp<CompCoatableWall>().Props.coatedThingDef);
+            Thing thing = ThingMaker.MakeThing(target.def.GetModExtension<ThingDefExtension_CoatableWall>().coatedThingDef);
             thing.SetFaction(coater?.Faction ?? Faction.OfPlayer);
             GenSpawn.Spawn(thing, target.Position, map, target.Rotation);
             return thing;
         }
 
         #endregion
+
+        public static List<ThingDef> AllDiggableResources()
+        {
+            List<ThingDef> list = new List<ThingDef>();
+            foreach (ThingDef def in DefDatabase<ThingDef>.AllDefs.Where(t => t.GetModExtension<ThingDefExtension_DiggableResource>() != null).OrderBy(t => t.GetModExtension<ThingDefExtension_DiggableResource>().priorityInList))
+            {
+                list.Add(def);
+            }
+            return list;
+        }
+
     }
 }

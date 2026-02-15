@@ -1,11 +1,8 @@
-﻿using ArgonicCore.Comps;
+﻿using ArgonicCore.ModExtensions;
 using ArgonicCore.Utilities;
 using RimWorld;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using Verse;
 using Verse.AI;
@@ -47,9 +44,9 @@ namespace ArgonicCore.WorkGivers
 
         public override Job JobOnThing(Pawn pawn, Thing t, bool forced = false)
         {
-            CompCoatableWall compCoatableWall = t.TryGetComp<CompCoatableWall>();
+            ThingDefExtension_CoatableWall extension = t.def.GetModExtension<ThingDefExtension_CoatableWall>();
             tmpRes.Clear();
-            tmpRes = ArgonicUtility.FindNearbyResource(pawn, compCoatableWall.Props.coatingResource, forced);
+            tmpRes = ArgonicUtility.FindNearbyResource(pawn, extension.coatingResource, forced);
             int stackCountFromThingList = ThingUtility.GetStackCountFromThingList(tmpRes);
             if (!tmpRes.Any())
             {
@@ -57,12 +54,23 @@ namespace ArgonicCore.WorkGivers
             }
             tmpRes.SortBy((Thing x) => pawn.Position.DistanceToSquared(x.Position));
             int num = 0;
-            int costPerWall = compCoatableWall.Props.coatingAmount; // Use cost from comp
+            int costPerWall = extension.coatingAmount; // Use cost from comp
+            ThingDef requiredResource = extension.coatingResource; // Use the correct resource
+
             Job job = JobMaker.MakeJob(DefDatabase<JobDef>.GetNamed("AC_CoatWall"), t);
             job.AddQueuedTarget(TargetIndex.A, t);
             job.AddQueuedTarget(TargetIndex.B, tmpRes[num]);
             job.countQueue = new List<int> { costPerWall };
             int num2 = Mathf.Min(10 * costPerWall, stackCountFromThingList); // Up to 10 walls, but account for cost
+
+            //Log.Message($"Cost per wall: {costPerWall}, total resource available: {stackCountFromThingList}, max resource to use: {num2}.");
+            //foreach (Thing g in tmpRes)
+            //{
+            //    Log.Message($"  Resource available: {g.ToString()} x{g.stackCount}");
+            //}
+            //Log.Message($"Target A: {job.targetA.ToString()}");
+            //Log.Message($"Target B: {job.targetB.ToString()}");
+
             for (int i = 0; i < 100; i++)
             {
                 IntVec3 intVec = t.Position + GenRadial.RadialPattern[i];
@@ -74,7 +82,9 @@ namespace ArgonicCore.WorkGivers
                 for (int j = 0; j < thingList.Count; j++)
                 {
                     Thing thing = thingList[j];
-                    if (thing == t || !ShouldCoatWall(pawn, thing, forced, false) || job.targetQueueA.Contains(thing))
+                    ThingDefExtension_CoatableWall ext = thing.def.GetModExtension<ThingDefExtension_CoatableWall>();
+
+                    if (thing == t || ext == null || t.def != thing.def || !ShouldCoatWall(pawn, thing, forced, false) || job.targetQueueA.Contains(thing))
                     {
                         continue;
                     }
@@ -104,9 +114,9 @@ namespace ArgonicCore.WorkGivers
 
         private AcceptanceReport ShouldCoatWall(Pawn pawn, Thing t, bool forced, bool checkResource)
         {
-            CompCoatableWall compCoatableWall = t.TryGetComp<CompCoatableWall>();
+            ThingDefExtension_CoatableWall extension = t.def.GetModExtension<ThingDefExtension_CoatableWall>();
 
-            if (t.def.building == null || !t.HasComp<CompCoatableWall>())
+            if (t.def.building == null || !t.def.HasModExtension<ThingDefExtension_CoatableWall>())
             {
                 return false;
             }
@@ -128,7 +138,7 @@ namespace ArgonicCore.WorkGivers
             }
             if (checkResource)
             {
-                List<Thing> list = pawn.Map.listerThings.ThingsOfDef(compCoatableWall.Props.coatingResource);
+                List<Thing> list = pawn.Map.listerThings.ThingsOfDef(extension.coatingResource);
                 for (int i = 0; i < list.Count; i++)
                 {
                     if (!list[i].IsForbidden(pawn) && pawn.CanReserveAndReach(list[i], PathEndMode.ClosestTouch, Danger.Deadly, 1, 1, null, forced))
@@ -136,7 +146,7 @@ namespace ArgonicCore.WorkGivers
                         return true;
                     }
                 }
-                return "NoIngredient".Translate(compCoatableWall.Props.coatingResource);
+                return "NoIngredient".Translate(extension.coatingResource);
             }
             return true;
         }

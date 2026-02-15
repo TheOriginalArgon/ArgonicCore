@@ -24,9 +24,9 @@ namespace ArgonicCore.Comps
 
         private CompRefuelable fuelComp;
 
-        public override void Initialize(CompProperties props)
+        public override void PostSpawnSetup(bool respawningAfterLoad)
         {
-            base.Initialize(props);
+            base.PostSpawnSetup(respawningAfterLoad);
             fuelComp = parent.TryGetComp<CompRefuelable>();
             if (Props.increasesTemperatureWithFuel && fuelComp == null)
             {

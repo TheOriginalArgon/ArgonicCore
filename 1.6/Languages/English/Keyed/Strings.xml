@@ -14,5 +14,18 @@
     <TM_InspectStringRuining>Ruining in {0}</TM_InspectStringRuining>
     <TM_MessageRuinedInStorage>{0} has ruined in storage</TM_MessageRuinedInStorage>
 
+    <AC_MessageProcessingComplete>A product has finished processing.</AC_MessageProcessingComplete>
+    <AC_MessageProcessingRuined>A product has ruined while processing.</AC_MessageProcessingRuined>
+
+    <AC_DesignatorCoatWalls>Coat Walls</AC_DesignatorCoatWalls>
+    <AC_DesignatorCoatWallsDesc>Apply a protective coating to walls to improve their durability and allowing them to be painted.</AC_DesignatorCoatWallsDesc>
+    <AC_MustDesignateCoatableWalls>You must designate coatable walls.</AC_MustDesignateCoatableWalls>
+
+    <AC_CommandAutoDeconstructLabel>Auto Deconstruct</AC_CommandAutoDeconstructLabel>
+    <AC_CommandAutoDeconstructDesc>Automatic deconstruction when process finishes is currently {0}.</AC_CommandAutoDeconstructDesc>
+
+    <AC_ChooseResource>Select resource</AC_ChooseResource>
+    <AC_ChooseResourceDesc>Select a resource to dig for.</AC_ChooseResourceDesc>
+    <AC_ProgressToNextPortion>Progress to next portion</AC_ProgressToNextPortion>
 
 </LanguageData>

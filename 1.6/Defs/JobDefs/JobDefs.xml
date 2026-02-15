@@ -7,4 +7,11 @@
         <casualInterruptible>false</casualInterruptible>
     </JobDef>
 
+    <JobDef>
+        <defName>AC_ResourceDig</defName>
+        <driverClass>ArgonicCore.JobDrivers.JobDriver_ResourceDig</driverClass>
+        <reportString>digging at TargetA.</reportString>
+        <casualInterruptible>false</casualInterruptible>
+    </JobDef>
+
 </Defs>

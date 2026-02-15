@@ -1,4 +1,5 @@
 ﻿using ArgonicCore.Defs;
+using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +21,11 @@ namespace ArgonicCore.ModExtensions
     // Add to recipes that yield special products. (I don't know why the hell this is so hardcoded in vanilla)
     public class RecipeDefExtension_SpecialProducts : DefModExtension
     {
-        public SpecialProductTypeDef productTypeDef;
+        public List<string> specialProductKeys; // This key is used to look up in the ThingDefExtension_SpecialProducts.specialProducts dictionary.
+        public List<string> randomProductKeys; // This key is used to look up in the ThingDefExtension_SpecialProducts.specialProducts dictionary for random products.
+
+        public bool usesEfficiency;
+        public SkillDef efficiencySkill;
     }
 
     // Add to recipes whose product can vary depending on quality (but the product needs individual defs for quality.)

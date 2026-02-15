@@ -10,6 +10,7 @@ namespace ArgonicCore.Defs
 {
     public sealed class SpecialProductTypeDef : Def
     {
-        public List<ThingDefCountRangeClass> products;
+        public List<ThingDefCountRangeClass> randomProducts;
+        public List<ThingDefCountClass> products;
     }
 }

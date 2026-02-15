@@ -1,4 +1,5 @@
 ﻿using ArgonicCore.Comps;
+using ArgonicCore.ModExtensions;
 using ArgonicCore.Utilities;
 using RimWorld;
 using System;
@@ -16,7 +17,6 @@ namespace ArgonicCore.JobDrivers
         private float coatingTime;
         private const TargetIndex CoatingTargetIndex = TargetIndex.A;
         private const TargetIndex ResourceIndex = TargetIndex.B;
-        private const float CoatTimeSecondsBase = 6f;
         private Thing CoatTarget => job.GetTarget(CoatingTargetIndex).Thing;
 
         public override bool TryMakePreToilReservations(bool errorOnFailed)
@@ -28,7 +28,8 @@ namespace ArgonicCore.JobDrivers
 
         protected override IEnumerable<Toil> MakeNewToils()
         {
-            int resCost = CoatTarget.TryGetComp<CompCoatableWall>().Props.coatingAmount;
+            int resCost = CoatTarget.def.GetModExtension<ThingDefExtension_CoatableWall>().coatingAmount;
+            float CoatTimeSecondsBase = CoatTarget.def.GetModExtension<ThingDefExtension_CoatableWall>().coatingWork / 60f;
             Toil removeBadTargets = Toils_JobTransforms.ClearDespawnedNullOrForbiddenQueuedTargets(CoatingTargetIndex);
             yield return Toils_Jump.JumpIf(removeBadTargets, () => job.GetTargetQueue(ResourceIndex).NullOrEmpty());
             foreach (Toil item in CollectResourceToils())
@@ -57,8 +58,6 @@ namespace ArgonicCore.JobDrivers
                     {
                         // Coat the wall. Swap the object.
                         ArgonicUtility.CoatWall(CoatTarget, pawn);
-                        Map.designationManager.RemoveDesignation(designation);
-                        //CoatTarget.Map.designationManager.RemoveDesignation(designation);
                     }
                     ReadyForNextToil();
                 }
@@ -82,6 +81,12 @@ namespace ArgonicCore.JobDrivers
             yield return Toils_Goto.GotoThing(ResourceIndex, PathEndMode.ClosestTouch).FailOnDespawnedNullOrForbidden(ResourceIndex).FailOnSomeonePhysicallyInteracting(ResourceIndex);
             yield return Toils_Haul.StartCarryThing(ResourceIndex, true);
             yield return jumpIfHaveTargetInQueue;
+        }
+
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            Scribe_Values.Look(ref coatingTime, "coatingTime", 0f);
         }
     }
 }
