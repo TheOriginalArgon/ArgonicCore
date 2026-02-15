@@ -23,7 +23,6 @@ namespace ArgonicCore.Comps
     {
         private CompRefuelable fuelComp;
         private CompAffectedByFacilities facilitiesComp;
-        private float tempModifierFacility;
         private float temperatureTarget;
         private float currentTemperature;
 
@@ -52,13 +51,12 @@ namespace ArgonicCore.Comps
             return sum;
         }
 
-        public override void Initialize(CompProperties props)
+        public override void PostSpawnSetup(bool respawningAfterLoad)
         {
-            base.Initialize(props);
+            base.PostSpawnSetup(respawningAfterLoad);
             fuelComp = parent.TryGetComp<CompRefuelable>();
             // I can get the facilities' stats or custom comps here. Still need to make the custom comp for facilities.
             facilitiesComp = parent.TryGetComp<CompAffectedByFacilities>();
-            tempModifierFacility = FacilityTempModifierSum();
 
             temperatureTarget = 800f; // DEBUG
             if (fuelComp == null)
@@ -114,7 +112,7 @@ namespace ArgonicCore.Comps
             {
                 if (ShouldIncreaseTemperature())
                 {
-                    currentTemperature += TemperatureIncrease() + tempModifierFacility;
+                    currentTemperature += TemperatureIncrease() + FacilityTempModifierSum();
                 }
                 else
                 {

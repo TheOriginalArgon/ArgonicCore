@@ -1,18 +1,33 @@
-﻿using ArgonicCore.ModExtensions;
+﻿using ArgonicCore.Comps;
+using ArgonicCore.ModExtensions;
 using HarmonyLib;
 using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using Verse;
+using Verse.AI;
 
 namespace ArgonicCore.Utilities
 {
     public static class ArgonicUtility
     {
+
+        //public static IEnumerable<Thing> ProcessPatchedProducts(RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingDefStyle style, int? overrideGraphicIndex)
+        //{
+
+        //}
+
+        /*
+         *  Write a new patch for GenRecipe.MakeRecipeProducts that checks if the recipe has a RecipeDefExtension_SpecialProducts.
+         *  Add a for loop just like the vanilla one that checks if the ingredient has a ThingDefExtension_SpecialProducts.
+         *  Call random products only if the ingredient has the specific settings for that.
+         *  
+         */
 
         static MethodInfo postProcessProduct = AccessTools.Method(typeof(GenRecipe), "PostProcessProduct");
 
@@ -29,11 +44,33 @@ namespace ArgonicCore.Utilities
                     ThingDefExtension_SpecialProducts extension = ingredients[i].def.GetModExtension<ThingDefExtension_SpecialProducts>();
                     for (int j = 0; j < extension.productTypeDef.products.Count; j++)
                     {
-                        int num = Rand.Range(extension.productTypeDef.products[j].Min, extension.productTypeDef.products[j].Max);
+                        int num = Rand.Range(extension.productTypeDef.randomProducts[j].Min, extension.productTypeDef.randomProducts[j].Max);
                         if (num > 0)
                         {
                             Thing product = ThingMaker.MakeThing(extension.productTypeDef.products[j].thingDef, null);
                             product.stackCount = num;
+                            yield return (Thing)postProcessProduct.Invoke(null, new object[] { product, recipeDef, worker, precept, style, overrideGraphicIndex });
+                        }
+                    }
+                }
+            }
+        }
+
+        public static IEnumerable<Thing> ProcessArgonicSpecialProducts(RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingDefStyle style, int? overrideGraphicIndex)
+        {
+            RecipeDefExtension_SpecialProducts extension = recipeDef.GetModExtension<RecipeDefExtension_SpecialProducts>();
+
+            for (int i = 0; i < extension.specialProductKeys.Count; i++)
+            {
+                for (int j = 0; j < ingredients.Count; j++)
+                {
+                    Thing ingredient = ingredients[j];
+                    ThingDefExtension_SpecialProducts ingredientExtension = ingredient.def.GetModExtension<ThingDefExtension_SpecialProducts>();
+
+                    foreach (string tag in extension.specialProductKeys)
+                    {
+                        foreach (Thing product in ingredientExtension.GetSpecialProducts(tag, worker, extension.usesEfficiency, extension.efficiencySkill))
+                        {
                             yield return (Thing)postProcessProduct.Invoke(null, new object[] { product, recipeDef, worker, precept, style, overrideGraphicIndex });
                         }
                     }
@@ -65,5 +102,143 @@ namespace ArgonicCore.Utilities
                 yield return ThingMaker.MakeThing(thingDef, null);
             }
         }
+
+        public static float ProcessorProgressRateAtConditions(float value, float valueMin, float valueMax)
+        {
+            if (value < valueMin || value > valueMax)
+            {
+                return 0f;
+            }
+            return 1f;
+        }
+
+        //public static float ProcessorProgressRateAtLightLevel(float light, float lightMin, float lightMax)
+        //{
+        //    if (light <= lightMin || light >= lightMax) return 0f;
+        //    float mid = (lightMin + lightMax) / 2f;
+        //    float halfRange = (lightMax - lightMin) / 2f;
+        //    float distanceFromMid = Math.Abs(light - mid);
+
+        //    return Math.Clamp(1f - (distanceFromMid / halfRange), 0f, 1f);
+        //}
+
+        //public static float ProcessorProgressRateAtRainfall(float rain, float rainMin, float rainMax)
+        //{
+        //    if (rain <= rainMin || rain >= rainMax) return 0f;
+        //    float mid = (rainMin + rainMax) / 2f;
+        //    float halfRange = (rainMax - rainMin) / 2f;
+        //    float distanceFromMid = Math.Abs(rain - mid);
+
+        //    return Math.Clamp(1f - (distanceFromMid / halfRange), 0f, 1f);
+        //}
+
+        #region Wall Coating
+
+        public static List<Thing> FindNearbyResource(Pawn pawn, ThingDef resource, bool forced = false)
+        {
+            List<Thing> list = new List<Thing>();
+            List<Thing> list2 = pawn.Map.listerThings.ThingsOfDef(resource);
+            for (int i = 0; i < list2.Count; i++)
+            {
+                if (!list2[i].IsForbidden(pawn) && pawn.CanReserveAndReach(list2[i], PathEndMode.ClosestTouch, Danger.Deadly, 1, -1, null, forced))
+                {
+                    list.Add(list2[i]);
+                }
+            }
+            return list;
+        }
+
+
+        // Might eventually need. This will only work if I make coated walls work as the smoothed walls do.
+
+        //private static bool IsBlocked(IntVec3 pos, Map map)
+        //{
+        //    if (!pos.InBounds(map))
+        //    {
+        //        return false;
+        //    }
+        //    if (pos.Walkable(map))
+        //    {
+        //        return false;
+        //    }
+        //    Building edifice = pos.GetEdifice(map);
+        //    if (edifice == null)
+        //    {
+        //        return false;
+        //    }
+        //    if (!edifice.def.IsSmoothed)
+        //    {
+        //        return edifice.def.building.isNaturalRock;
+        //    }
+        //    return true;
+        //}
+
+        //public static void Notify_CoatedByPawn(Thing t, Pawn p)
+        //{
+        //    for (int i = 0; i < GenAdj.CardinalDirections.Length; i++)
+        //    {
+        //        IntVec3 c = t.Position + GenAdj.CardinalDirections[i];
+        //        if (!c.InBounds(t.Map))
+        //        {
+        //            continue;
+        //        }
+        //        Building edifice = c.GetEdifice(t.Map);
+        //        if (edifice == null || !edifice.def.HasComp<CompCoatableWall>())
+        //        {
+        //            continue;
+        //        }
+        //        bool flag = true;
+        //        int num = 0;
+        //        for (int j = 0; j < GenAdj.CardinalDirections.Length; j++)
+        //        {
+        //            IntVec3 intVec = edifice.Position + GenAdj.CardinalDirections[j];
+        //            if (!IsBlocked(intVec, t.Map))
+        //            {
+        //                flag = false;
+        //                break;
+        //            }
+        //            Building edifice2 = intVec.GetEdifice(t.Map);
+        //            if (edifice2 != null && edifice2.def.IsSmoothed)
+        //            {
+        //                num++;
+        //            }
+        //        }
+        //        if (!flag || num < 2)
+        //        {
+        //            continue;
+        //        }
+        //        for (int k = 0; k < GenAdj.DiagonalDirections.Length; k++)
+        //        {
+        //            if (!IsBlocked(edifice.Position + GenAdj.DiagonalDirections[k], t.Map))
+        //            {
+        //                CoatWall(edifice, p);
+        //                break;
+        //            }
+        //        }
+        //    }
+        //}
+
+        public static Thing CoatWall(Thing target, Pawn coater)
+        {
+            Map map = target.Map;
+            target.Destroy(DestroyMode.WillReplace);
+            Thing thing = ThingMaker.MakeThing(target.def.GetModExtension<ThingDefExtension_CoatableWall>().coatedThingDef);
+            thing.SetFaction(coater?.Faction ?? Faction.OfPlayer);
+            GenSpawn.Spawn(thing, target.Position, map, target.Rotation);
+            return thing;
+        }
+
+        #endregion
+
+        public static List<ThingDef> AllDiggableResources()
+        {
+            List<ThingDef> list = new List<ThingDef>();
+            foreach (ThingDef def in DefDatabase<ThingDef>.AllDefs.Where(t => t.GetModExtension<ThingDefExtension_DiggableResource>() != null).OrderBy(t => t.GetModExtension<ThingDefExtension_DiggableResource>().priorityInList))
+            {
+                list.Add(def);
+            }
+            return list;
+        }
+
     }
 }

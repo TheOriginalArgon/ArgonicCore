@@ -51,29 +51,39 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArgonicCore.cs" />
+    <Compile Include="Commands\Command_SelectDiggingResource.cs" />
+    <Compile Include="Comps\CompBuildCopyOther.cs" />
     <Compile Include="Comps\CompCanGiveHediff.cs" />
+    <Compile Include="Comps\CompCoatableWall.cs" />
     <Compile Include="Comps\CompContaminable.cs" />
     <Compile Include="Comps\CompCrate.cs" />
+    <Compile Include="Comps\CompOneTimeProcessor.cs" />
+    <Compile Include="Comps\CompResourceDigger.cs" />
     <Compile Include="Comps\CompRuinOverTime.cs" />
     <Compile Include="Comps\CompTemperatureFacility.cs" />
     <Compile Include="Comps\CompTemperatureWorkstation.cs" />
     <Compile Include="CompUseEffect_SpawnCrateContents.cs" />
     <Compile Include="CustomDefs.cs" />
     <Compile Include="Defs\Defs.cs" />
+    <Compile Include="Designators\Designator_CoatWalls.cs" />
     <Compile Include="HarmonyPatches.cs" />
     <Compile Include="Hediffs\Hediff_Poison.cs" />
     <Compile Include="Hediffs\Hediff_PoisonOld.cs" />
     <Compile Include="IngestionOutcomes\IngestionOutcomeDoer_CanGiveHediff.cs" />
     <Compile Include="IngestionOutcomes\IngestionOutcomeDoer_GiveHediffIfContaminated.cs" />
     <Compile Include="IngestionOutcomes\IngestionOutcomeDoer_HediffsPerQuality.cs" />
+    <Compile Include="JobDrivers\JobDriver_CoatWall.cs" />
+    <Compile Include="JobDrivers\JobDriver_ResourceDig.cs" />
     <Compile Include="ModExtensions\RecipeDefExtensions.cs" />
     <Compile Include="ModExtensions\ThingDefExtensions.cs" />
     <Compile Include="PatchOperations\PatchOperationDistributeCost.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RecipeWorkers\Recipe_LowerSeverity.cs" />
-    <Compile Include="RecipeWorkers\Recipe_TempDependant.cs"/>
+    <Compile Include="RecipeWorkers\Recipe_TempDependant.cs" />
     <Compile Include="Utilities\ArgonicUtility.cs" />
     <Compile Include="Utilities\SplitUtility.cs" />
+    <Compile Include="WorkGivers\WorkGiver_ConstructCoatWall.cs" />
+    <Compile Include="WorkGivers\WorkGiver_ResourceDig.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Krafs.Rimworld.Ref">

@@ -39,18 +39,18 @@ namespace ArgonicCore
                     insertionIndex_01 = i - 1;
 
                     var newInstructions_01 = new List<CodeInstruction>
-                    {
-                        new CodeInstruction(OpCodes.Conv_R4),
-                        new CodeInstruction(OpCodes.Ldloc_1),
-                        new CodeInstruction(OpCodes.Ldstr, "ArgonicCore_FuelPower"),
-                        new CodeInstruction(OpCodes.Ldc_I4_1),
-                        new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(DefDatabase<StatDef>), nameof(DefDatabase<StatDef>.GetNamed), new Type[] { typeof(string), typeof(bool) })),
-                        new CodeInstruction(OpCodes.Ldc_I4_1),
-                        new CodeInstruction(OpCodes.Ldc_I4_M1),
-                        new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(StatExtension), nameof(StatExtension.GetStatValue), new Type[] { typeof(Thing), typeof(StatDef), typeof(bool), typeof(int) })),
-                        new CodeInstruction(OpCodes.Div),
-                        new CodeInstruction(OpCodes.Conv_I4)
-                    };
+                        {
+                            new CodeInstruction(OpCodes.Conv_R4),
+                            new CodeInstruction(OpCodes.Ldloc_1),
+                            new CodeInstruction(OpCodes.Ldstr, "ArgonicCore_FuelPower"),
+                            new CodeInstruction(OpCodes.Ldc_I4_1),
+                            new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(DefDatabase<StatDef>), nameof(DefDatabase<StatDef>.GetNamed), new Type[] { typeof(string), typeof(bool) })),
+                            new CodeInstruction(OpCodes.Ldc_I4_1),
+                            new CodeInstruction(OpCodes.Ldc_I4_M1),
+                            new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(StatExtension), nameof(StatExtension.GetStatValue), new Type[] { typeof(Thing), typeof(StatDef), typeof(bool), typeof(int) })),
+                            new CodeInstruction(OpCodes.Div),
+                            new CodeInstruction(OpCodes.Conv_I4)
+                        };
 
                     if (insertionIndex_01 != -1)
                     {
@@ -71,16 +71,16 @@ namespace ArgonicCore
             }
 
             var newInstructions_02 = new List<CodeInstruction>
-            {
-                new CodeInstruction(OpCodes.Ldloc_1),
-                new CodeInstruction(OpCodes.Ldstr, "ArgonicCore_FuelPower"),
-                new CodeInstruction(OpCodes.Ldc_I4_1),
-                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(DefDatabase<StatDef>), nameof(DefDatabase<StatDef>.GetNamed), new Type[] { typeof(string), typeof(bool) })),
-                new CodeInstruction(OpCodes.Ldc_I4_1),
-                new CodeInstruction(OpCodes.Ldc_I4_M1),
-                new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(StatExtension), nameof(StatExtension.GetStatValue), new Type[] { typeof(Thing), typeof(StatDef), typeof(bool), typeof(int) })),
-                new CodeInstruction(OpCodes.Mul)
-            };
+                {
+                    new CodeInstruction(OpCodes.Ldloc_1),
+                    new CodeInstruction(OpCodes.Ldstr, "ArgonicCore_FuelPower"),
+                    new CodeInstruction(OpCodes.Ldc_I4_1),
+                    new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(DefDatabase<StatDef>), nameof(DefDatabase<StatDef>.GetNamed), new Type[] { typeof(string), typeof(bool) })),
+                    new CodeInstruction(OpCodes.Ldc_I4_1),
+                    new CodeInstruction(OpCodes.Ldc_I4_M1),
+                    new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(StatExtension), nameof(StatExtension.GetStatValue), new Type[] { typeof(Thing), typeof(StatDef), typeof(bool), typeof(int) })),
+                    new CodeInstruction(OpCodes.Mul)
+                };
 
             if (insertionIndex_02 != -1)
             {
@@ -89,6 +89,61 @@ namespace ArgonicCore
 
             return code.AsEnumerable();
         }
+
+
+        //[HarmonyTranspiler]
+        //[HarmonyPatch(typeof(CompRefuelable), nameof(CompRefuelable.Refuel), new Type[] { typeof(List<Thing>) })]
+        //public static IEnumerable<CodeInstruction> RefuelTranspiler(IEnumerable<CodeInstruction> instructions)
+        //{
+        //    // Reflections.
+        //    FieldInfo stackCountField = AccessTools.Field(typeof(Thing), nameof(Thing.stackCount));
+        //    MethodInfo refuelMethod = AccessTools.Method(typeof(CompRefuelable), nameof(CompRefuelable.Refuel), new Type[] { typeof(float) });
+        //    MethodInfo getNamedMethod = AccessTools.Method(typeof(DefDatabase<StatDef>), nameof(DefDatabase<StatDef>.GetNamed), new Type[] { typeof(string), typeof(bool) });
+        //    MethodInfo getStatValueMethod = AccessTools.Method(typeof(StatExtension), nameof(StatExtension.GetStatValue), new Type[] { typeof(Thing), typeof(StatDef), typeof(bool), typeof(int) });
+
+        //    var code = instructions.ToList();
+        //    for (int i = 0; i < code.Count; i++)
+        //    {
+        //        // Insert first set of instructions before stackCount is loaded
+        //        if (code[i].LoadsField(stackCountField))
+        //        {
+        //            var newInstructions = new List<CodeInstruction>
+        //    {
+        //        new CodeInstruction(OpCodes.Conv_R4),
+        //        new CodeInstruction(OpCodes.Ldloc_1),
+        //        new CodeInstruction(OpCodes.Ldstr, "ArgonicCore_FuelPower"),
+        //        new CodeInstruction(OpCodes.Ldc_I4_1),
+        //        new CodeInstruction(OpCodes.Call, getNamedMethod),
+        //        new CodeInstruction(OpCodes.Ldc_I4_1),
+        //        new CodeInstruction(OpCodes.Ldc_I4_M1),
+        //        new CodeInstruction(OpCodes.Call, getStatValueMethod),
+        //        new CodeInstruction(OpCodes.Div),
+        //        new CodeInstruction(OpCodes.Conv_I4)
+        //    };
+        //            code.InsertRange(i, newInstructions);
+        //            i += newInstructions.Count; // Skip over inserted instructions
+        //        }
+
+        //        // Insert second set of instructions before Refuel(float) is called
+        //        if (code[i].Calls(refuelMethod))
+        //        {
+        //            var newInstructions = new List<CodeInstruction>
+        //    {
+        //        new CodeInstruction(OpCodes.Ldloc_1),
+        //        new CodeInstruction(OpCodes.Ldstr, "ArgonicCore_FuelPower"),
+        //        new CodeInstruction(OpCodes.Ldc_I4_1),
+        //        new CodeInstruction(OpCodes.Call, getNamedMethod),
+        //        new CodeInstruction(OpCodes.Ldc_I4_1),
+        //        new CodeInstruction(OpCodes.Ldc_I4_M1),
+        //        new CodeInstruction(OpCodes.Call, getStatValueMethod),
+        //        new CodeInstruction(OpCodes.Mul)
+        //    };
+        //            code.InsertRange(i, newInstructions);
+        //            i += newInstructions.Count; // Skip over inserted instructions
+        //        }
+        //    }
+        //    return code.AsEnumerable();
+        //}
 
     }
 
@@ -108,7 +163,7 @@ namespace ArgonicCore
                     CompContaminable compContaminable1 = product.TryGetComp<CompContaminable>();
                     if (compContaminable1 != null)
                     {
-                        // Check if any of the ingredients contamines the product.
+                        // Check if any of the ingredients contaminates the product.
                         for (int i = 0; i < ingredients.Count; i++)
                         {
                             CompContaminable compContaminable = ingredients[i].TryGetComp<CompContaminable>();
@@ -189,11 +244,13 @@ namespace ArgonicCore
         [HarmonyPatch(typeof(GenRecipe), nameof(GenRecipe.MakeRecipeProducts))]
         private static IEnumerable<Thing> MakeSpecialProducts(IEnumerable<Thing> values, RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingDefStyle style, int? overrideGraphicIndex)
         {
-            if (recipeDef.HasModExtension<RecipeDefExtension_SpecialProducts>())
+            RecipeDefExtension_SpecialProducts specialProductsExtension = recipeDef.GetModExtension<RecipeDefExtension_SpecialProducts>();
+            RecipeDefExtension_QualityProduct qualityProductExtension = recipeDef.GetModExtension<RecipeDefExtension_QualityProduct>();
+            if (specialProductsExtension != null)
             {
-                return ArgonicUtility.RandomProductYield(recipeDef, worker, ingredients, precept, style, overrideGraphicIndex);
+                return ArgonicUtility.ProcessArgonicSpecialProducts(recipeDef, worker, ingredients, precept, style, overrideGraphicIndex);
             }
-            if (recipeDef.HasModExtension<RecipeDefExtension_QualityProduct>())
+            if (qualityProductExtension != null)
             {
                 return ArgonicUtility.GetQualityModifiedThings(recipeDef, worker, ingredients, precept, style, overrideGraphicIndex);
             }

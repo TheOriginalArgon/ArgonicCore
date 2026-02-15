@@ -8,7 +8,7 @@
         <li>1.6</li>
     </supportedVersions>
     <description>Code framework containing various features that interact with several of my mods.</description>
-    <modVersion IgnoreIfNoMatchingField="True">1.1-stable</modVersion>
+    <modVersion IgnoreIfNoMatchingField="True">Feb9.2026</modVersion>
     <modIconPath IgnoreIfNoMatchingField="True">UI/ArgonicCore_ModIcon</modIconPath>
     <modDependencies>
         <li>

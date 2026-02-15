@@ -1,0 +1,31 @@
+<Defs>
+
+    <WorkGiverDef>
+        <defName>AC_CoatWall</defName>
+        <label>coat wall</label>
+        <giverClass>ArgonicCore.WorkGivers.WorkGiver_ConstructCoatWall</giverClass>
+        <workType>Construction</workType>
+        <priorityInType>40</priorityInType>
+        <verb>coat</verb>
+        <gerund>coating</gerund>
+        <requiredCapacities>
+            <li>Manipulation</li>
+        </requiredCapacities>
+        <canBeDoneByMechs>true</canBeDoneByMechs>
+    </WorkGiverDef>
+
+    <WorkGiverDef>
+        <defName>AC_ResourceDig</defName>
+        <label>dig resource</label>
+        <giverClass>ArgonicCore.WorkGivers.WorkGiver_ResourceDig</giverClass>
+        <workType>Mining</workType>
+        <priorityInType>40</priorityInType>
+        <verb>dig</verb>
+        <gerund>digging</gerund>
+        <requiredCapacities>
+            <li>Manipulation</li>
+        </requiredCapacities>
+        <canBeDoneByMechs>true</canBeDoneByMechs>
+    </WorkGiverDef>
+
+</Defs>
