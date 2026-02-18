@@ -33,11 +33,12 @@ namespace ArgonicCore.Comps
         private float portionProgress;
         private float portionYieldPercent;
         private const float WorkPerPortionBase = 10000f;
-        private float WorkPerPortion => WorkPerPortionBase * targetResource.GetModExtension<ThingDefExtension_DiggableResource>().difficultyFactor;
+        private float WorkPerPortion => WorkPerPortionBase * (TargetResource?.GetModExtension<ThingDefExtension_DiggableResource>()?.difficultyFactor ?? 1f);
 
         public float ProgressToNextPortionPercent => portionProgress / WorkPerPortion;
         public List<ThingDef> availableResources;
-        public ThingDef targetResource;
+        public string targetResourceDefName;
+        public ThingDef TargetResource => ThingDef.Named(targetResourceDefName);
 
         public List<string> ResourceTags => Props.resourceTags;
         public bool IsAutomaticDigger => Props.isAutomaticDigger;
@@ -57,11 +58,15 @@ namespace ArgonicCore.Comps
                     availableResources.Add(resource);
                 }
             }
-            targetResource = availableResources.FirstOrDefault();
+            if (!respawningAfterLoad || targetResourceDefName == null)
+            {
+                targetResourceDefName = availableResources.FirstOrDefault().defName;
+            }
         }
 
         public override void PostExposeData()
         {
+            Scribe_Values.Look(ref targetResourceDefName, "targetResourceDefName");
             Scribe_Values.Look(ref portionProgress, "portionProgress", 0f);
             Scribe_Values.Look(ref portionYieldPercent, "portionYieldPercent", 0f);
         }
@@ -108,17 +113,17 @@ namespace ArgonicCore.Comps
 
         private void TryProducePortion(float yieldPercent, Pawn digger = null)
         {
-            if (targetResource == null)
+            if (TargetResource == null)
             {
                 return;
             }
-            ThingDefExtension_DiggableResource diggableResourceExt = targetResource.GetModExtension<ThingDefExtension_DiggableResource>();
+            ThingDefExtension_DiggableResource diggableResourceExt = TargetResource.GetModExtension<ThingDefExtension_DiggableResource>();
             if (diggableResourceExt == null)
             {
                 return;
             }
             int stackCount = Mathf.Max(1, GenMath.RoundRandom(diggableResourceExt.minimumPortion * Rand.Range(1f, 2f) * yieldPercent));
-            Thing thing = ThingMaker.MakeThing(targetResource);
+            Thing thing = ThingMaker.MakeThing(TargetResource);
             thing.stackCount = stackCount;
             GenPlace.TryPlaceThing(thing, parent.InteractionCell, parent.Map, ThingPlaceMode.Near, null, (IntVec3 p) => p != parent.Position && p != parent.InteractionCell);
         }

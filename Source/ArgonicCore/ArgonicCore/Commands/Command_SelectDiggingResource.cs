@@ -28,8 +28,8 @@ namespace ArgonicCore.Commands
                     compResourceDigger = building.TryGetComp<CompResourceDigger>();
                     if (compResourceDigger != null)
                     {
-                        icon = compResourceDigger.targetResource.uiIcon;
-                        defaultIconColor = compResourceDigger.targetResource.uiIconColor;
+                        icon = compResourceDigger.TargetResource.uiIcon;
+                        defaultIconColor = compResourceDigger.TargetResource.uiIconColor;
                     }
                 }
             }
@@ -43,7 +43,7 @@ namespace ArgonicCore.Commands
             {
                 options.Add(new FloatMenuOption("EM_ChooseMaterialToDig".Translate(res.label), delegate
                 {
-                    compResourceDigger.targetResource = res;
+                    compResourceDigger.targetResourceDefName = res.defName;
                 }, MenuOptionPriority.Default, null, null, 29f));
             }
             Find.WindowStack.Add(new FloatMenu(options));
