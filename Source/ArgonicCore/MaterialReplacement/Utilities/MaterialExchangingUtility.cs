@@ -49,20 +49,20 @@ namespace MaterialReplacement.Utilities
             }
         }
 
-        public static bool ExistMaterialsToReplace(ThingDef thingDef, out List<ThingDef> materials)
+        //public static bool ExistMaterialsToReplace(ThingDef thingDef, out List<ThingDef> materials)
+        //{
+        //    // TODO: Cache this somehow.
+        //    List<ThingDef> replacementMaterials = (from x in DefDatabase<MaterialReplacementDef>.AllDefsListForReading where x.materialToReplace == thingDef select x.replaceWith).ToList();
+
+        //    if (replacementMaterials.Any()) { replacementMaterials.Add(thingDef); materials = replacementMaterials; return true; }
+        //    materials = null;
+        //    return false;
+        //}
+
+        public static bool ExistMaterialsToReplaceAtTechLevel(string defName, ThingDef thingDef, TechLevel techLevel, out List<ThingDef> materials)
         {
             // TODO: Cache this somehow.
-            List<ThingDef> replacementMaterials = (from x in DefDatabase<MaterialReplacementDef>.AllDefsListForReading where x.materialToReplace == thingDef select x.replaceWith).ToList();
-
-            if (replacementMaterials.Any()) { replacementMaterials.Add(thingDef); materials = replacementMaterials; return true; }
-            materials = null;
-            return false;
-        }
-
-        public static bool ExistMaterialsToReplaceAtTechLevel(ThingDef thingDef, TechLevel techLevel, out List<ThingDef> materials)
-        {
-            // TODO: Cache this somehow.
-            List<ThingDef> replacementMaterials = (from x in DefDatabase<MaterialReplacementDef>.AllDefsListForReading where x.materialToReplace == thingDef && x.maxTechLevel >= techLevel select x.replaceWith).ToList();
+            List<ThingDef> replacementMaterials = (from x in DefDatabase<MaterialReplacementDef>.AllDefsListForReading where x.materialToReplace == thingDef && x.maxTechLevel >= techLevel && (!x.exceptionDefs?.Contains(defName) ?? true) select x.replaceWith).ToList();
 
             if (replacementMaterials.Any()) { replacementMaterials.Add(thingDef); materials = replacementMaterials; return true; }
             materials = null;

@@ -27,6 +27,7 @@ namespace MaterialReplacement.Commands
                     {
                         SetMaterialForThisBlueprint(material, thisOption);
                         icon = thisOption.uiIcon;
+                        defaultIconColor = thisOption.uiIconColor;
                     }
                     catch
                     {

@@ -72,7 +72,6 @@ namespace MaterialReplacement
             [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.GetGizmos))]
             private static IEnumerable<Gizmo> AddMaterialSelectors(IEnumerable<Gizmo> values, Blueprint_Build __instance)
             {
-
                 bool compatibleLists = true;
                 ThingDef thingDef = null;
                 List<object> selectedObjects = Find.Selector.SelectedObjects;
@@ -106,9 +105,9 @@ namespace MaterialReplacement
                         List<ThingDef> replacementMaterials;
                         for (int i = 0; i < costList.Count; i++)
                         {
-                            //Log.Error("Like and subscribe or else you're doomed to have red errors forever!");
+                            //Log.Error("Like and subscribe or else you're doomed to have red errors forever!"); This was an old joke I'm keeping because I find it funny.
                             // If there are any materials that can replace the current one.
-                            if (MaterialExchangingUtility.ExistMaterialsToReplaceAtTechLevel(costList[i].thingDef, techLevel, out replacementMaterials))
+                            if (MaterialExchangingUtility.ExistMaterialsToReplaceAtTechLevel(__instance.def.entityDefToBuild.defName, costList[i].thingDef, techLevel, out replacementMaterials))
                             {
                                 yield return MaterialExchangingUtility.SelectMaterialCommand(__instance, __instance.Map, costList[i].thingDef, replacementMaterials);
                             }

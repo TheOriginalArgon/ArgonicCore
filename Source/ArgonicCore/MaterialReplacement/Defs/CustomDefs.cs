@@ -1,4 +1,5 @@
 ﻿using RimWorld;
+using System.Collections.Generic;
 using Verse;
 
 namespace MaterialReplacement.Defs
@@ -9,5 +10,7 @@ namespace MaterialReplacement.Defs
         public ThingDef replaceWith;
         public TechLevel maxTechLevel;
         public float costModifier;
+        public List<string> exceptionDefs;
+        //public List<TerrainDef> exceptionTerrainDefs;
     }
 }
