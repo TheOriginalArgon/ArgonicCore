@@ -217,15 +217,21 @@ namespace ArgonicCore
 
                 if (Rand.Chance(extension.chance))
                 {
-                    float sv = extension.severity * Mathf.Max(1f - worker.GetStatValue(StatDefOf.ToxicEnvironmentResistance), 0f);
-                    if (!worker.health.hediffSet.HasHediff(extension.hediff))
+                    float severityModifier = 1f;
+                    if (extension.preventedByToxicResistance)
                     {
-                        worker.health.AddHediff(extension.hediff);
-                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += sv;
+                        severityModifier = Mathf.Max(1f - worker.GetStatValue(StatDefOf.ToxicEnvironmentResistance), 0f);
                     }
-                    else
+                    Hediff newHediff = worker.health.AddHediff(extension.hediff);
+                    Hediff hediff = worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff);
+                    if (hediff != null && severityModifier > 0f)
                     {
-                        worker.health.hediffSet.GetFirstHediffOfDef(extension.hediff).Severity += sv;
+                        newHediff.Severity = extension.severity * severityModifier;
+                        newHediff.TryMergeWith(hediff);
+                        if (extension.showAlert)
+                        {
+                            Messages.Message("AC_MessageHediffOnRecipe".Translate(worker.LabelShort, hediff.Label, worker.Named("PAWN"), hediff.Named("HEDIFF")), worker, MessageTypeDefOf.NegativeEvent);
+                        }
                     }
                 }
             }

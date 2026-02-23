@@ -14,6 +14,8 @@ namespace ArgonicCore.ModExtensions
     {
         public HediffDef hediff;
         public bool affectsMechanoids = false;
+        public bool preventedByToxicResistance = false;
+        public bool showAlert = false;
         public float severity;
         public float chance = 1.0f;
     }

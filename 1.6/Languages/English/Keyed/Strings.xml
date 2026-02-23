@@ -17,6 +17,8 @@
     <AC_MessageProcessingComplete>A product has finished processing.</AC_MessageProcessingComplete>
     <AC_MessageProcessingRuined>A product has ruined while processing.</AC_MessageProcessingRuined>
 
+    <AC_MessageHediffOnRecipe>{PAWN} has gained {HEDIFF} after finishing a recipe.</AC_MessageHediffOnRecipe>
+
     <AC_DesignatorCoatWalls>Coat Walls</AC_DesignatorCoatWalls>
     <AC_DesignatorCoatWallsDesc>Apply a protective coating to walls to improve their durability and allowing them to be painted.</AC_DesignatorCoatWallsDesc>
     <AC_MustDesignateCoatableWalls>You must designate coatable walls.</AC_MustDesignateCoatableWalls>
