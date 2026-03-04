@@ -37,6 +37,15 @@ namespace ArgonicCore.ModExtensions
             }
         }
 
+        public List<ThingDefCountClass> SpecialProductsForKey(string key)
+        {
+            if (specialProducts == null || !specialProducts.ContainsKey(key))
+            {
+                return null;
+            }
+            return specialProducts[key];
+        }
+
         public IEnumerable<Thing> GetSpecialProducts(string key, Pawn worker, bool usesEfficiency, SkillDef efficiencySkill = null)
         {
             if (specialProducts == null)

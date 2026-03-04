@@ -78,6 +78,7 @@
     <Compile Include="ModExtensions\ThingDefExtensions.cs" />
     <Compile Include="PatchOperations\PatchOperationDistributeCost.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RecipeWorkerCounter_MakeCobblestone.cs" />
     <Compile Include="RecipeWorkers\Recipe_LowerSeverity.cs" />
     <Compile Include="RecipeWorkers\Recipe_TempDependant.cs" />
     <Compile Include="Utilities\ArgonicUtility.cs" />
