@@ -23,8 +23,9 @@ namespace ArgonicCore.ModExtensions
     // Add to recipes that yield special products. (I don't know why the hell this is so hardcoded in vanilla)
     public class RecipeDefExtension_SpecialProducts : DefModExtension
     {
-        public List<string> specialProductKeys; // This key is used to look up in the ThingDefExtension_SpecialProducts.specialProducts dictionary.
-        public List<string> randomProductKeys; // This key is used to look up in the ThingDefExtension_SpecialProducts.specialProducts dictionary for random products.
+        public SpecialProductsDef specialProductsDef;
+        public bool randomProduct;
+        public bool ingredientDependant = false;
 
         public bool usesEfficiency;
         public SkillDef efficiencySkill;

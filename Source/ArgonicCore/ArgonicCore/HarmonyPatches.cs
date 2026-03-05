@@ -296,6 +296,23 @@ namespace ArgonicCore
                 }
             }
         }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(ThingUtility), nameof(ThingUtility.CheckAutoRebuildOnDestroyed))]
+        private static bool RebuildCoatedWall(Blueprint_Build __result, Thing thing, DestroyMode mode, Map map, BuildableDef buildingDef)
+        {
+            if (buildingDef.GetModExtension<ThingDefExtension_CoatedWall>() != null)
+            {
+                ThingDefExtension_CoatedWall ext = buildingDef.GetModExtension<ThingDefExtension_CoatedWall>();
+                if (Find.PlaySettings.autoRebuild && mode == DestroyMode.KillFinalize && thing.Faction == Faction.OfPlayer && ext.uncoatedThingDef.blueprintDef != null && ext.uncoatedThingDef.IsResearchFinished && map.areaManager.Home[thing.Position] && GenConstruct.CanPlaceBlueprintAt(ext.uncoatedThingDef, thing.Position, thing.Rotation, map, godMode: false, null, null, thing.Stuff).Accepted)
+                {
+                    __result = GenConstruct.PlaceBlueprintForBuild(ext.uncoatedThingDef, thing.Position, map, thing.Rotation, Faction.OfPlayer, thing.Stuff, thing.StyleSourcePrecept, thing.StyleDef);
+                    return false;
+                }
+            }
+            return true;
+        }
+
     }
     #endregion
 }

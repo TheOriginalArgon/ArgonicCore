@@ -8,9 +8,9 @@ using Verse;
 
 namespace ArgonicCore.Defs
 {
-    public sealed class SpecialProductTypeDef : Def
+    public sealed class SpecialProductsDef : Def
     {
-        public List<ThingDefCountRangeClass> randomProducts;
         public List<ThingDefCountClass> products;
+        public Dictionary<string, List<ThingDefCountClass>> keyedProducts;
     }
 }

@@ -1,4 +1,5 @@
 ﻿using ArgonicCore.Comps;
+using ArgonicCore.Defs;
 using ArgonicCore.ModExtensions;
 using HarmonyLib;
 using RimWorld;
@@ -9,6 +10,7 @@ using System.Reflection;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 using Verse;
 using Verse.AI;
 
@@ -31,50 +33,44 @@ namespace ArgonicCore.Utilities
 
         static MethodInfo postProcessProduct = AccessTools.Method(typeof(GenRecipe), "PostProcessProduct");
 
-        public static IEnumerable<Thing> RandomProductYield(RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingDefStyle style, int? overrideGraphicIndex)
-        {
-            for (int i = 0; i < ingredients.Count; i++)
-            {
-                if (!ingredients[i].def.HasModExtension<ThingDefExtension_SpecialProducts>())
-                {
-                    Log.Error("Error: " + ingredients[i].def.defName + " doesn't have ThingDefExtension_SpecialProducts.");
-                }
-                else
-                {
-                    ThingDefExtension_SpecialProducts extension = ingredients[i].def.GetModExtension<ThingDefExtension_SpecialProducts>();
-                    for (int j = 0; j < extension.productTypeDef.products.Count; j++)
-                    {
-                        int num = Rand.Range(extension.productTypeDef.randomProducts[j].Min, extension.productTypeDef.randomProducts[j].Max);
-                        if (num > 0)
-                        {
-                            Thing product = ThingMaker.MakeThing(extension.productTypeDef.products[j].thingDef, null);
-                            product.stackCount = num;
-                            yield return (Thing)postProcessProduct.Invoke(null, new object[] { product, recipeDef, worker, precept, style, overrideGraphicIndex });
-                        }
-                    }
-                }
-            }
-        }
-
         public static IEnumerable<Thing> ProcessArgonicSpecialProducts(RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingDefStyle style, int? overrideGraphicIndex)
         {
-            RecipeDefExtension_SpecialProducts extension = recipeDef.GetModExtension<RecipeDefExtension_SpecialProducts>();
+            RecipeDefExtension_SpecialProducts recipeExtension = recipeDef.GetModExtension<RecipeDefExtension_SpecialProducts>();
+            List<ThingDefCountClass> possibleProducts = new List<ThingDefCountClass>();
 
-            for (int i = 0; i < extension.specialProductKeys.Count; i++)
+            if (!recipeExtension.ingredientDependant)
             {
-                for (int j = 0; j < ingredients.Count; j++)
+                possibleProducts.AddRange(recipeExtension.specialProductsDef.products);
+            }
+            else
+            {
+                // This code is thought for lists that have only one ingredient. If there are more, it will work in an unintended way.
+                for (int i = 0; i < ingredients.Count; i++)
                 {
-                    Thing ingredient = ingredients[j];
-                    ThingDefExtension_SpecialProducts ingredientExtension = ingredient.def.GetModExtension<ThingDefExtension_SpecialProducts>();
+                    Thing ingredient = ingredients[i];
 
-                    foreach (string tag in extension.specialProductKeys)
-                    {
-                        foreach (Thing product in ingredientExtension.GetSpecialProducts(tag, worker, extension.usesEfficiency, extension.efficiencySkill))
-                        {
-                            yield return (Thing)postProcessProduct.Invoke(null, new object[] { product, recipeDef, worker, precept, style, overrideGraphicIndex });
-                        }
-                    }
+                    string key = ingredient.def.defName;
+                    possibleProducts.AddRange(recipeExtension.specialProductsDef.keyedProducts[key]);
                 }
+            }
+
+            if (possibleProducts.Count == 0) yield break;
+
+            if (recipeExtension.randomProduct)
+            {
+                possibleProducts = new List<ThingDefCountClass> { possibleProducts.RandomElement() };
+            }
+
+            float efficiencyFactor = recipeExtension.usesEfficiency ? ((float)worker.skills.GetSkill(recipeExtension.efficiencySkill).levelInt) / 5 : 1f;
+
+            for (int i = 0; i < possibleProducts.Count; i++)
+            {
+                ThingDefCountClass product = possibleProducts[i];
+                Thing thing = ThingMaker.MakeThing(product.thingDef, null);
+                int num = GenMath.RoundRandom(product.count * efficiencyFactor);
+                thing.stackCount = Mathf.Max(1, num);
+
+                yield return (Thing)postProcessProduct.Invoke(null, new object[] { thing, recipeDef, worker, precept, style, overrideGraphicIndex });
             }
         }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ArgonicCore.Defs;
 using ArgonicCore.ModExtensions;
 using RimWorld;
 using Verse;
@@ -34,12 +35,12 @@ namespace ArgonicCore
 
         public override bool CanPossiblyStore(Bill_Production bill, ISlotGroup slotGroup)
         {
+            SpecialProductsDef specialProductsDef = DefDatabase<SpecialProductsDef>.GetNamed("EM_SpecialProducts_Cobblestone", true);
             foreach (ThingDef allowedThingDef in bill.ingredientFilter.AllowedThingDefs)
             {
-                ThingDefExtension_SpecialProducts extension = allowedThingDef.GetModExtension<ThingDefExtension_SpecialProducts>();
-                if (extension != null && !extension.SpecialProductsForKey("EM_SpecialProducts_Cobblestone").NullOrEmpty())
+                if (specialProductsDef.keyedProducts.Keys.Contains(allowedThingDef.defName))
                 {
-                    ThingDef product = extension.SpecialProductsForKey("EM_SpecialProducts_Cobblestone")[0].thingDef;
+                    ThingDef product = specialProductsDef.keyedProducts[allowedThingDef.defName][0].thingDef;
                     if (!slotGroup.Settings.AllowedToAccept(product))
                     {
                         return false;
