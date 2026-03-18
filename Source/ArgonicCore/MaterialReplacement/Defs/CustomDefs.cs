@@ -8,9 +8,10 @@ namespace MaterialReplacement.Defs
     {
         public ThingDef materialToReplace;
         public ThingDef replaceWith;
-        public TechLevel maxTechLevel;
+        public TechLevel maxTechLevel = TechLevel.Ultra;
+        public TechLevel maxRecipeTechLevel = TechLevel.Ultra;
         public float costModifier;
         public List<string> exceptionDefs;
-        //public List<TerrainDef> exceptionTerrainDefs;
+        public bool applyToRecipes = true;
     }
 }

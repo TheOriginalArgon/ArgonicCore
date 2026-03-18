@@ -1,4 +1,5 @@
-﻿using System.Configuration;
+﻿using System;
+using System.Configuration;
 
 namespace ArgonicCore.Utilities
 {
@@ -10,6 +11,7 @@ namespace ArgonicCore.Utilities
             return roundedValue == 0 ? 5 : roundedValue;
         }
 
+        // Obsolete. Kept for backward compatibility.
         public static int Split(string splitMode, int amount, out int extracted)
         {
             if (splitMode == "small")
@@ -31,6 +33,13 @@ namespace ArgonicCore.Utilities
             }
             extracted = 0;
             return amount;
+        }
+
+        public static int Split(int percentage, int amount, out int extracted)
+        {
+            extracted = RoundToNearest5((amount * percentage) / 100);
+            if (extracted > amount) extracted = amount;
+            return amount - extracted;
         }
     }
 }

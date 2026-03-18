@@ -30,39 +30,31 @@ namespace MaterialReplacement.Utilities
 
         public static TechLevel GetHigherTechLevel(List<ResearchProjectDef> list)
         {
-            if (list.NullOrEmpty()) { return TechLevel.Animal; }
-            List<int> techLevels = new List<int>();
-            for (int i = 0; i < list.Count; i++)
-            {
-                techLevels.Add((int)list[i].techLevel);
-            }
+            return list.NullOrEmpty() ? TechLevel.Animal : list.Max(r => r.techLevel);
+            //if (list.NullOrEmpty()) { return TechLevel.Animal; }
+            //List<int> techLevels = new List<int>();
+            //for (int i = 0; i < list.Count; i++)
+            //{
+            //    techLevels.Add((int)list[i].techLevel);
+            //}
 
-            if (techLevels.Any())
-            {
-                //Log.Warning($"{(TechLevel)techLevels.Max()}");
-                return (TechLevel)techLevels.Max();
-            }
-            else
-            {
-                //Log.Warning("Defaulted to Animal");
-                return TechLevel.Animal;
-            }
+            //if (techLevels.Any())
+            //{
+            //    //Log.Warning($"{(TechLevel)techLevels.Max()}");
+            //    return (TechLevel)techLevels.Max();
+            //}
+            //else
+            //{
+            //    //Log.Warning("Defaulted to Animal");
+            //    return TechLevel.Animal;
+            //}
         }
 
-        //public static bool ExistMaterialsToReplace(ThingDef thingDef, out List<ThingDef> materials)
-        //{
-        //    // TODO: Cache this somehow.
-        //    List<ThingDef> replacementMaterials = (from x in DefDatabase<MaterialReplacementDef>.AllDefsListForReading where x.materialToReplace == thingDef select x.replaceWith).ToList();
-
-        //    if (replacementMaterials.Any()) { replacementMaterials.Add(thingDef); materials = replacementMaterials; return true; }
-        //    materials = null;
-        //    return false;
-        //}
-
-        public static bool ExistMaterialsToReplaceAtTechLevel(string defName, ThingDef thingDef, TechLevel techLevel, out List<ThingDef> materials)
+        // Checks if a material can be replaced with others at a given tech level, and if so, retrieves the list of possible replacement materials.
+        public static bool ExistMaterialsToReplaceAtTechLevel(string defName, ThingDef thingDef, TechLevel techLevel, out List<ThingDef> materials, bool careForRecipes = false)
         {
             // TODO: Cache this somehow.
-            List<ThingDef> replacementMaterials = (from x in DefDatabase<MaterialReplacementDef>.AllDefsListForReading where x.materialToReplace == thingDef && x.maxTechLevel >= techLevel && (!x.exceptionDefs?.Contains(defName) ?? true) select x.replaceWith).ToList();
+            List<ThingDef> replacementMaterials = (from x in DefDatabase<MaterialReplacementDef>.AllDefsListForReading where x.materialToReplace == thingDef && (careForRecipes ? x.maxRecipeTechLevel : x.maxTechLevel) >= techLevel && (!x.exceptionDefs?.Contains(defName) ?? true) && (!careForRecipes || x.applyToRecipes) select x.replaceWith).ToList();
 
             if (replacementMaterials.Any()) { replacementMaterials.Add(thingDef); materials = replacementMaterials; return true; }
             materials = null;
@@ -78,6 +70,8 @@ namespace MaterialReplacement.Utilities
         public static bool IsMaterialBeingReplacedIn(ThingDef thingDef, Thing thing)
         {
             return thing.GetActiveOptionalMaterialFor(thingDef) != thingDef;
+            // Check if the dictionary contains the key directly.
+            // TODO: Instead of checking if there are materials being replaced, just check if the thing has any materials at all being replaced, and modify the methods so that they return a default if there aren't any.
         }
 
         public static List<ThingDefCountClass> GetCustomCostListFor(List<ThingDefCountClass> list, Blueprint_Build callingThing)
@@ -94,6 +88,7 @@ namespace MaterialReplacement.Utilities
             {
                 ThingDef material = list[i].thingDef;
                 int cost = list[i].count;
+                // TODO: Check directly checking the dictionary.
                 if (IsMaterialBeingReplacedIn(material, callingThing))
                 {
                     ThingDef replacementMaterial = GetActiveOptionalMaterialFor(callingThing, material);
@@ -142,10 +137,12 @@ namespace MaterialReplacement.Utilities
             //    Log.Error($"THING({callingThing.GetType().Name}): {c.thingDef} x{c.count}");
             //}
 
+            // Check directly if the thing is in the dictionary.
             for (int i = 0; i < list.Count; i++)
             {
                 ThingDef material = list[i].thingDef;
                 int cost = list[i].count;
+                // TODO: Check directly checking the dictionary.
                 if (IsMaterialBeingReplacedIn(material, callingThing))
                 {
                     ThingDef replacementMaterial = GetActiveOptionalMaterialFor(callingThing, material);
@@ -167,7 +164,6 @@ namespace MaterialReplacement.Utilities
                         int actualMaterialCost = cost - stuffCost;
                         if (actualMaterialCost > 0)
                         {
-
                             result.Add(new ThingDefCountClass(replacementMaterial, Mathf.RoundToInt(actualMaterialCost * GetCostModifierFor(material, replacementMaterial))));
                         }
                         result.Add(new ThingDefCountClass(callingThing.Stuff, stuffCost));
@@ -193,6 +189,7 @@ namespace MaterialReplacement.Utilities
             return result;
         }
 
+        // Merges the final cost list by adding up the counts of identical materials.
         public static List<ThingDefCountClass> MergeList(List<ThingDefCountClass> list)
         {
             Dictionary<ThingDef, int> mergedDict = new Dictionary<ThingDef, int>();
@@ -220,23 +217,24 @@ namespace MaterialReplacement.Utilities
         // Gets the alternative material "y" for a given material "x" associated to a blueprint.
         public static ThingDef GetActiveOptionalMaterialFor(this Thing blueprint, ThingDef material)
         {
-            try
+            if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(blueprint, out InnerDict materialInUse))
             {
-                if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(blueprint, out InnerDict materialInUse))
+                if (materialInUse != null)
                 {
-                    foreach (KeyValuePair<ThingDef, ThingDef> pair in materialInUse.materialValues)
+                    if (materialInUse.materialValues.TryGetValue(material, out ThingDef replacement))
                     {
-                        if (pair.Key == material)
-                        {
-                            //Log.Message($"Retrieved optional material in blueprint {blueprint}: {pair.Value} is replacement for {material}");
-                            return pair.Value;
-                        }
+                        //Log.Message($"Retrieved optional material in blueprint {blueprint}: {replacement} is replacement for {material}");
+                        return replacement;
                     }
+                    //foreach (KeyValuePair<ThingDef, ThingDef> pair in materialInUse.materialValues)
+                    //{
+                    //    if (pair.Key == material)
+                    //    {
+                    //        //Log.Message($"Retrieved optional material in blueprint {blueprint}: {pair.Value} is replacement for {material}");
+                    //        return pair.Value;
+                    //    }
+                    //}
                 }
-            }
-            catch (NullReferenceException e)
-            {
-                Log.Error("[Argonic Core] - Attempted to get null material for" + blueprint.ToString() + " -> " + material.label + ": " + e.Message);
             }
             //Log.Message($"Retrieved {material} as default material in {blueprint}. (Material list has no match.)");
             return material;
@@ -280,37 +278,41 @@ namespace MaterialReplacement.Utilities
                 return dict.materialValues;
             }
             // DEBUG
-            //Log.Message($"Couldn't retrieve a dictionary for {thing}, returning an empty one...");
+            //Log.Message($"Couldn't retrieve a dictionary for {thing}, returning null.");
 
-            return new Dictionary<ThingDef, ThingDef>();
+            //return new Dictionary<ThingDef, ThingDef>();
+            return null;
         }
 
         // Sets the list of replacement materials for a given Thing and stores it in the dictionary.
         public static void SetMaterialValues(this Thing thing, Dictionary<ThingDef, ThingDef> values)
         {
-            if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(thing, out InnerDict dict))
+            if (values != null)
             {
-                GameComponent_ExtendedThings.Instance.optionalMaterialInUse[thing].materialValues = values;
-                // DEBUG
-                //Log.Message($"Updated material list for {thing}: {dict.materialValues.Count} entries.");
-                //foreach (KeyValuePair<ThingDef, ThingDef> pair in GameComponent_ExtendedThings.Instance.optionalMaterialInUse[thing].materialValues)
-                //{
-                //    Log.Message($"\t- {pair.Key} was replaced with {pair.Value}");
-                //}
-                //foreach (KeyValuePair<ThingDef, ThingDef> pair in values)
-                //{
-                //    Log.Message($"\t- {pair.Key} is now replaced with {pair.Value}");
-                //}
-            }
-            else
-            {
-                GameComponent_ExtendedThings.Instance.optionalMaterialInUse.Add(thing, new InnerDict() { materialValues = values });
-                // DEBUG
-                //Log.Message($"Created material replacement list for {thing}");
-                //foreach (KeyValuePair<ThingDef, ThingDef> pair in values)
-                //{
-                //    Log.Message($"\t- Initialized: {pair.Key} is now replaced with {pair.Value}");
-                //}
+                if (GameComponent_ExtendedThings.Instance.optionalMaterialInUse.TryGetValue(thing, out InnerDict dict))
+                {
+                    GameComponent_ExtendedThings.Instance.optionalMaterialInUse[thing].materialValues = values;
+                    // DEBUG
+                    //Log.Message($"Updated material list for {thing}: {dict.materialValues.Count} entries.");
+                    //foreach (KeyValuePair<ThingDef, ThingDef> pair in GameComponent_ExtendedThings.Instance.optionalMaterialInUse[thing].materialValues)
+                    //{
+                    //    Log.Message($"\t- {pair.Key} was replaced with {pair.Value}");
+                    //}
+                    //foreach (KeyValuePair<ThingDef, ThingDef> pair in values)
+                    //{
+                    //    Log.Message($"\t- {pair.Key} is now replaced with {pair.Value}");
+                    //}
+                }
+                else
+                {
+                    GameComponent_ExtendedThings.Instance.optionalMaterialInUse.Add(thing, new InnerDict() { materialValues = values });
+                    // DEBUG
+                    //Log.Message($"Added {thing} to dictionary with a material list: {values.Count} entries.");
+                    //foreach (KeyValuePair<ThingDef, ThingDef> pair in values)
+                    //{
+                    //    Log.Message($"\t- {pair.Key} is replaced with {pair.Value}");
+                    //}
+                }
             }
         }
     }

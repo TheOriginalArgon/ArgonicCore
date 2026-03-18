@@ -53,7 +53,8 @@ namespace MaterialReplacement.GameComponents
             if (Find.TickManager.TicksGame % 2000 == 0)
             {
                 TryClearDictionary();
-                // DEBUG
+
+                //DEBUG
                 //Log.Message("Dict has: " + optionalMaterialInUse.Count + " elements");
                 //foreach (KeyValuePair<Thing, InnerDict> pair in optionalMaterialInUse)
                 //{
@@ -75,19 +76,25 @@ namespace MaterialReplacement.GameComponents
 
         private void TryClearDictionary()
         {
+            int c = 0;
             List<Thing> removedThings = new List<Thing>();
             foreach (KeyValuePair<Thing, InnerDict> pair in optionalMaterialInUse)
             {
-                if (pair.Key == null || pair.Key.Destroyed || pair.Key.Discarded)
+                if (pair.Key == null || pair.Key.Destroyed || pair.Key.Discarded || pair.Value.materialValues.NullOrEmpty())
                 {
                     removedThings.Add(pair.Key);
+                    c++;
                 }
             }
 
-            foreach (Thing t in removedThings)
+            if (c > 0)
             {
-                optionalMaterialInUse.Remove(t);
-                //Log.Message($"Thing {t} no longer exists. Removing...");
+                foreach (Thing t in removedThings)
+                {
+                    optionalMaterialInUse.Remove(t);
+                    //Log.Message($"Thing {t} no longer exists. Removing...");
+                }
+                Log.Message($"[Argonic Core] Removed {c} unnecessary material replacement entries.");
             }
         }
     }

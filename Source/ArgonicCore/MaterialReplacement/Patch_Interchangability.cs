@@ -1,11 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Emit;
-using ArgonicCore.Utilities;
+﻿using ArgonicCore.Utilities;
 using HarmonyLib;
 using MaterialReplacement.Utilities;
 using RimWorld;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Security.Cryptography;
 using Verse;
 
 namespace MaterialReplacement
@@ -44,13 +46,13 @@ namespace MaterialReplacement
             {
                 if (momentaryThing != null)
                 {
-                    //Log.Warning($"Momentary thing is an instance of {momentaryThing.def.defName}, which is {momentaryThing}");
+                    Log.Warning($"Momentary thing is an instance of {momentaryThing.def.defName}, which is {momentaryThing}");
                     __result = MaterialExchangingUtility.GetCustomCostListFor(__result, momentaryThing);
 
-                    //foreach (ThingDefCountClass c in __result)
-                    //{
-                    //    Log.Warning($"{c.thingDef} x{c.count}");
-                    //}
+                    foreach (ThingDefCountClass c in __result)
+                    {
+                        Log.Warning($"{c.thingDef} x{c.count}");
+                    }
                     return;
                 }
                 //else
@@ -122,7 +124,16 @@ namespace MaterialReplacement
             [HarmonyPatch(typeof(Blueprint_Build), "MakeSolidThing")]
             private static void MakeFrame(Blueprint_Build __instance, ref Thing __result)
             {
-                __result.SetMaterialValues(__instance.TryGetMaterialValues());
+                Dictionary<ThingDef, ThingDef> materialValues = __instance.TryGetMaterialValues();
+                if (materialValues != null)
+                {
+                    __result.SetMaterialValues(materialValues);
+                    Log.Message($"Passing material values to {__result} from {__instance}");
+                }
+                else
+                {
+                    Log.Message($"Made {__result} from {__instance}. material values null.");
+                }
             }
 
             // Blueprint request materials.
@@ -140,6 +151,7 @@ namespace MaterialReplacement
             #endregion
 
             #region Frame Handling
+
             // Pass the replacement material values to the finished Building once the Frame is completed.
             [HarmonyTranspiler]
             [HarmonyPatch(typeof(Frame), nameof(Frame.CompleteConstruction))]
@@ -175,25 +187,6 @@ namespace MaterialReplacement
                 //}
             }
 
-            //Upon destruction, spawn the materials this Building was built with.
-            //[HarmonyTranspiler]
-            //[HarmonyPatch(typeof(GenLeaving), nameof(GenLeaving.DoLeavingsFor), new Type[] { typeof(Thing), typeof(Map), typeof(DestroyMode), typeof(CellRect), typeof(Predicate<IntVec3>), typeof(List<Thing>) })]
-            //private static IEnumerable<CodeInstruction> ReturnProperMaterials(IEnumerable<CodeInstruction> instructions)
-            //{
-            //    foreach (CodeInstruction instruction in instructions)
-            //    {
-            //        yield return instruction;
-
-            //        if (instruction.Calls(AccessTools.Method(typeof(CostListCalculator), nameof(CostListCalculator.CostListAdjusted), new Type[] { typeof(Thing) })))
-            //        {
-            //            yield return new CodeInstruction(OpCodes.Stloc_S, 12);
-            //            yield return new CodeInstruction(OpCodes.Ldloc_S, 12);
-            //            yield return new CodeInstruction(OpCodes.Ldarg_0);
-            //            yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MaterialExchangingUtility), nameof(MaterialExchangingUtility.GetCustomCostListFor), new Type[] { typeof(List<ThingDefCountClass>), typeof(Thing) }));
-            //        }
-            //    }
-            //}
-
             // Resets the selected material to the selected one if the construction fails.
             // TODO
 
@@ -220,6 +213,37 @@ namespace MaterialReplacement
                 yield break;
             }
             #endregion
+
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(RecipeDefGenerator), nameof(RecipeDefGenerator.SetIngredients))]
+            private static void SetReplacementIngredients(RecipeDef r, ThingDef def)
+            {
+                foreach (IngredientCount ingredient in r.ingredients.Where(ingredient => ingredient.IsFixedIngredient))
+                {
+                    // This line of code causes my eyes to bleed, but I guess it works well because it's an enum. I have to guess where the research prerequisite is because it can be either a single one or a list.
+                    TechLevel techLevel = (TechLevel)Math.Max((byte)(def.recipeMaker.researchPrerequisite?.techLevel ?? TechLevel.Animal), (byte)MaterialExchangingUtility.GetHigherTechLevel(def.recipeMaker.researchPrerequisites));
+
+                    List<ThingDef> replacementMaterials;
+                    if (MaterialExchangingUtility.ExistMaterialsToReplaceAtTechLevel(def.defName, ingredient.FixedIngredient, techLevel, out replacementMaterials, true))
+                    {
+                        foreach (ThingDef replacementMaterial in replacementMaterials)
+                        {
+                            ingredient.filter.SetAllow(replacementMaterial, true);
+                            r.fixedIngredientFilter.SetAllow(replacementMaterial, true);
+                        }
+                    }
+                }
+            }
+
+            //[HarmonyPostfix]
+            //[HarmonyPatch(typeof(GenRecipe), nameof(GenRecipe.MakeRecipeProducts))]
+            //private static IEnumerable<Thing> SetReplacentIngredientsOnProduct(IEnumerable<Thing> processedProducts, RecipeDef recipeDef, List<Thing> ingredients)
+            //{
+            //    if (recipeDef.specialProducts == null && recipeDef.products != null)
+            //    {
+            //        // If I ever discover a way to pass the recipe's replacement ingredients to the final thing, cool.
+            //    }
+            //}
         }
         #endregion
     }

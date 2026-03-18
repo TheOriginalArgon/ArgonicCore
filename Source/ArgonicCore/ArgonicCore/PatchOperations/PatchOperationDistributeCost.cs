@@ -13,6 +13,7 @@ namespace ArgonicCore.PatchOperations
     {
         protected string newMaterial;
         protected string splitMode;
+        protected int percentage;
         protected int minimum = 1;
         protected bool logging = false;
 
@@ -29,9 +30,16 @@ namespace ArgonicCore.PatchOperations
                     result = true;
                     bool removeFlag = false;
                     int originalAmount = Convert.ToInt32(node.InnerText);
-                    originalAmount = SplitUtility.Split(splitMode, originalAmount, out int splitAmount);
+                    int splitAmount;
+                    if (splitMode.NullOrEmpty())
+                    {
+                        originalAmount = SplitUtility.Split(percentage, originalAmount, out splitAmount);
+                    }
+                    else
+                    {
+                        originalAmount = SplitUtility.Split(splitMode, originalAmount, out splitAmount);
+                    }
                     XmlNode newMaterialNode = node.OwnerDocument.CreateElement(newMaterial);
-                    //newMaterialNode.InnerXml = node.InnerXml;
                     newMaterialNode.InnerText = splitAmount.ToString();
                     if (originalAmount > 0)
                     {
