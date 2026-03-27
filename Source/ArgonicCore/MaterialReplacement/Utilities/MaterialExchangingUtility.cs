@@ -74,99 +74,60 @@ namespace MaterialReplacement.Utilities
             // TODO: Instead of checking if there are materials being replaced, just check if the thing has any materials at all being replaced, and modify the methods so that they return a default if there aren't any.
         }
 
-        public static List<ThingDefCountClass> GetCustomCostListFor(List<ThingDefCountClass> list, Blueprint_Build callingThing)
-        {
-            List<ThingDefCountClass> result = new List<ThingDefCountClass>();
-
-            //Log.WarningOnce($"{callingThing} is {callingThing.def.defName} and its stuff is {callingThing.Stuff}", 1);
-            //foreach (ThingDefCountClass c in list)
-            //{
-            //    Log.Error($"BLUEPRINT({callingThing.GetType().Name}): {c.thingDef} x{c.count}");
-            //}
-
-            for (int i = 0; i < list.Count; i++)
-            {
-                ThingDef material = list[i].thingDef;
-                int cost = list[i].count;
-                // TODO: Check directly checking the dictionary.
-                if (IsMaterialBeingReplacedIn(material, callingThing))
-                {
-                    ThingDef replacementMaterial = GetActiveOptionalMaterialFor(callingThing, material);
-                    if (material == callingThing.stuffToUse)
-                    {
-                        int stuffCost = Mathf.RoundToInt(callingThing.def.entityDefToBuild.CostStuffCount / callingThing.stuffToUse.VolumePerUnit);
-                        if (stuffCost < 1)
-                        {
-                            stuffCost = 1;
-                        }
-                        int actualMaterialCost = cost - stuffCost;
-                        if (actualMaterialCost > 0)
-                        {
-                            result.Add(new ThingDefCountClass(replacementMaterial, Mathf.RoundToInt(actualMaterialCost * GetCostModifierFor(material, replacementMaterial))));
-                        }
-                        result.Add(new ThingDefCountClass(callingThing.stuffToUse, stuffCost));
-                    }
-                    else
-                    {
-                        result.Add(new ThingDefCountClass(replacementMaterial, Mathf.RoundToInt(cost * GetCostModifierFor(material, replacementMaterial))));
-                    }
-                }
-                else
-                {
-                    result.Add(list[i]);
-                }
-            }
-
-            result = MergeList(result);
-
-            //foreach (ThingDefCountClass c in result)
-            //{
-            //    Log.Warning($" BLUEPRINT: {c.thingDef} x{c.count}");
-            //}
-
-            return result;
-        }
-
         public static List<ThingDefCountClass> GetCustomCostListFor(List<ThingDefCountClass> list, Thing callingThing)
         {
             List<ThingDefCountClass> result = new List<ThingDefCountClass>();
 
-            //Log.WarningOnce($"{callingThing} is {callingThing.def.defName} and its stuff is {callingThing.Stuff}", 1);
-            //foreach (ThingDefCountClass c in list)
-            //{
-            //    Log.Error($"THING({callingThing.GetType().Name}): {c.thingDef} x{c.count}");
-            //}
+            bool isBlueprint = callingThing is Blueprint_Build;
+            ThingDef callingStuff = null;
+            if (isBlueprint)
+            {
+                callingStuff = ((Blueprint_Build)callingThing).stuffToUse;
+            }
+            else
+            {
+                callingStuff = callingThing.Stuff;
+            }
 
-            // Check directly if the thing is in the dictionary.
             for (int i = 0; i < list.Count; i++)
             {
                 ThingDef material = list[i].thingDef;
                 int cost = list[i].count;
-                // TODO: Check directly checking the dictionary.
+
                 if (IsMaterialBeingReplacedIn(material, callingThing))
                 {
                     ThingDef replacementMaterial = GetActiveOptionalMaterialFor(callingThing, material);
-                    if (material == callingThing.Stuff)
+
+                    // If the material matches the calling thing's stuff, compute stuffCost according to the specific type
+                    if (callingStuff != null && material == callingStuff)
                     {
                         int stuffCost;
-                        if (callingThing is Frame)
+                        if (isBlueprint)
                         {
-                            stuffCost = Mathf.RoundToInt(callingThing.def.entityDefToBuild.CostStuffCount / callingThing.Stuff.VolumePerUnit);
+                            var bp = (Blueprint_Build)callingThing;
+                            stuffCost = Mathf.RoundToInt(bp.def.entityDefToBuild.CostStuffCount / callingStuff.VolumePerUnit);
+                        }
+                        else if (callingThing is Frame)
+                        {
+                            stuffCost = Mathf.RoundToInt(callingThing.def.entityDefToBuild.CostStuffCount / callingStuff.VolumePerUnit);
                         }
                         else
                         {
-                            stuffCost = Mathf.RoundToInt(callingThing.def.CostStuffCount / callingThing.Stuff.VolumePerUnit);
+                            stuffCost = Mathf.RoundToInt(callingThing.def.CostStuffCount / callingStuff.VolumePerUnit);
                         }
+
                         if (stuffCost < 1)
                         {
                             stuffCost = 1;
                         }
+
                         int actualMaterialCost = cost - stuffCost;
                         if (actualMaterialCost > 0)
                         {
                             result.Add(new ThingDefCountClass(replacementMaterial, Mathf.RoundToInt(actualMaterialCost * GetCostModifierFor(material, replacementMaterial))));
                         }
-                        result.Add(new ThingDefCountClass(callingThing.Stuff, stuffCost));
+
+                        result.Add(new ThingDefCountClass(callingStuff, stuffCost));
                     }
                     else
                     {
@@ -180,12 +141,6 @@ namespace MaterialReplacement.Utilities
             }
 
             result = MergeList(result);
-
-            //foreach (ThingDefCountClass c in result)
-            //{
-            //    Log.Warning($"THING({callingThing.GetType().Name}): {c.thingDef} x{c.count}");
-            //}
-
             return result;
         }
 

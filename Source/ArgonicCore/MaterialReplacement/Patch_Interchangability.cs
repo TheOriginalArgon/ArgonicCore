@@ -230,6 +230,7 @@ namespace MaterialReplacement
                         {
                             ingredient.filter.SetAllow(replacementMaterial, true);
                             r.fixedIngredientFilter.SetAllow(replacementMaterial, true);
+                            //r.defaultIngredientFilter.SetAllow(replacementMaterial, false); // Add the ingredient, but set it to disallowed by default.
                         }
                     }
                 }

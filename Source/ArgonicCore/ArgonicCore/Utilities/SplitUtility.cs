@@ -1,5 +1,7 @@
-﻿using System;
+﻿using RimWorld;
+using System;
 using System.Configuration;
+using UnityEngine;
 
 namespace ArgonicCore.Utilities
 {
@@ -35,11 +37,19 @@ namespace ArgonicCore.Utilities
             return amount;
         }
 
-        public static int Split(int percentage, int amount, out int extracted)
+        public static int Split(int percentage, float extraCostFactor, int amount, out int extracted, bool round = true)
         {
-            extracted = RoundToNearest5((amount * percentage) / 100);
-            if (extracted > amount) extracted = amount;
-            return amount - extracted;
+            int costExtracted = amount * percentage / 100;
+            if (round)
+            {
+                costExtracted = RoundToNearest5(costExtracted);
+                extracted = RoundToNearest5((int)(costExtracted * extraCostFactor));
+            }
+            else
+            {
+                extracted = (int)(costExtracted * extraCostFactor);
+            }
+            return Mathf.Max(0, amount - costExtracted);
         }
     }
 }
