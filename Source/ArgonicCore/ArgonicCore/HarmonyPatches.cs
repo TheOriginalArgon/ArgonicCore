@@ -266,7 +266,9 @@ namespace ArgonicCore
             }
         }
 
+        [ThreadStatic]
         private static List<Thing> temp_ingredients;
+        [ThreadStatic]
         private static Pawn temp_worker;
 
         [HarmonyPostfix]
