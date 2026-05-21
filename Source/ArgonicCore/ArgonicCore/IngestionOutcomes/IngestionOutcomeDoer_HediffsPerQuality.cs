@@ -15,6 +15,7 @@ namespace ArgonicCore.IngestionOutcomes
         public ChemicalDef toleranceChemical;
         private bool divideByBodySize;
         public bool multiplyByGeneToleranceFactors;
+        public bool stackable = false;
 
         protected override void DoIngestionOutcomeSpecial(Pawn pawn, Thing ingested, int ingestedCount)
         {
@@ -62,6 +63,16 @@ namespace ArgonicCore.IngestionOutcomes
                 AddictionUtility.ModifyChemicalEffectForToleranceAndBodySize(pawn, toleranceChemical, ref initialSeverity, multiplyByGeneToleranceFactors, divideByBodySize);
                 hediff.Severity = initialSeverity;
                 pawn.health.AddHediff(hediff, null, null, null);
+                if (!stackable)
+                {
+                    foreach (HediffDef hediffDef in hediffDefs)
+                    {
+                        if (pawn.health.hediffSet.HasHediff(hediffDef) && hediffDef != hediff.def)
+                        {
+                            pawn.health.RemoveHediff(pawn.health.hediffSet.GetFirstHediffOfDef(hediffDef));
+                        }
+                    }
+                }
             }
         }
     }

@@ -279,12 +279,12 @@ namespace ArgonicCore
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(GenRecipe), "PostProcessProduct")]
-        private static void InheritQuality(Thing __result, Pawn worker)
+        private static void InheritQuality(Thing __result, RecipeDef recipeDef, Pawn worker)
         {
-            if (__result.HasComp<CompQuality>() && __result.def.HasModExtension<ThingDefExtension_InheritsQuality>())
+            if (__result.HasComp<CompQuality>())
             {
-                ThingDefExtension_InheritsQuality ext = __result.def.GetModExtension<ThingDefExtension_InheritsQuality>();
-                if (temp_ingredients.Any(x => x.def == ext.keyIngredient) && temp_worker == worker)
+                ThingDefExtension_InheritsQuality ext = __result.def.GetModExtension<ThingDefExtension_InheritsQuality>() ?? recipeDef.GetModExtension<ThingDefExtension_InheritsQuality>();
+                if (ext != null && temp_ingredients.Any(x => x.def == ext.keyIngredient) && temp_worker == worker)
                 {
                     Thing keyIng = temp_ingredients.First(x => x.def == ext.keyIngredient);
                     if (keyIng.HasComp<CompQuality>())

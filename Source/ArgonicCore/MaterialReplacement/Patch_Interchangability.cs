@@ -46,13 +46,13 @@ namespace MaterialReplacement
             {
                 if (momentaryThing != null)
                 {
-                    Log.Warning($"Momentary thing is an instance of {momentaryThing.def.defName}, which is {momentaryThing}");
+                    //Log.Warning($"Momentary thing is an instance of {momentaryThing.def.defName}, which is {momentaryThing}");
                     __result = MaterialExchangingUtility.GetCustomCostListFor(__result, momentaryThing);
 
-                    foreach (ThingDefCountClass c in __result)
-                    {
-                        Log.Warning($"{c.thingDef} x{c.count}");
-                    }
+                    //foreach (ThingDefCountClass c in __result)
+                    //{
+                    //    Log.Warning($"{c.thingDef} x{c.count}");
+                    //}
                     return;
                 }
                 //else
@@ -128,12 +128,12 @@ namespace MaterialReplacement
                 if (materialValues != null)
                 {
                     __result.SetMaterialValues(materialValues);
-                    Log.Message($"Passing material values to {__result} from {__instance}");
+                    //Log.Message($"Passing material values to {__result} from {__instance}");
                 }
-                else
-                {
-                    Log.Message($"Made {__result} from {__instance}. material values null.");
-                }
+                //else
+                //{
+                //    Log.Message($"Made {__result} from {__instance}. material values null.");
+                //}
             }
 
             // Blueprint request materials.
