@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../MaterialReplacement/MaterialReplacement.csproj" />
+  <Project Path="ArgonicCore.csproj" />
+</Solution>

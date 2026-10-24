@@ -1,0 +1,9 @@
+<Defs>
+
+    <DesignationDef>
+        <defName>AC_CoatWall</defName>
+        <texturePath>Designations/AC_CoatWalls</texturePath>
+        <targetType>Thing</targetType>
+    </DesignationDef>
+
+</Defs>

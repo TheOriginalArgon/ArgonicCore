@@ -248,7 +248,7 @@ namespace ArgonicCore
 
         [HarmonyPostfix]
         [HarmonyPatch(typeof(GenRecipe), nameof(GenRecipe.MakeRecipeProducts))]
-        private static IEnumerable<Thing> MakeSpecialProducts(IEnumerable<Thing> values, RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingDefStyle style, int? overrideGraphicIndex)
+        private static IEnumerable<Thing> MakeSpecialProducts(IEnumerable<Thing> values, RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingStyleDef style, int? overrideGraphicIndex)
         {
             RecipeDefExtension_SpecialProducts specialProductsExtension = recipeDef.GetModExtension<RecipeDefExtension_SpecialProducts>();
             RecipeDefExtension_QualityProduct qualityProductExtension = recipeDef.GetModExtension<RecipeDefExtension_QualityProduct>();

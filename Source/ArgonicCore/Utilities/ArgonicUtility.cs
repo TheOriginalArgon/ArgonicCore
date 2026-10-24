@@ -34,7 +34,7 @@ namespace ArgonicCore.Utilities
         // Ludeon, make this method public so I don't have to do this no more.
         static MethodInfo postProcessProduct = AccessTools.Method(typeof(GenRecipe), "PostProcessProduct");
 
-        public static IEnumerable<Thing> ProcessArgonicSpecialProducts(RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingDefStyle style, int? overrideGraphicIndex)
+        public static IEnumerable<Thing> ProcessArgonicSpecialProducts(RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingStyleDef style, int? overrideGraphicIndex)
         {
             RecipeDefExtension_SpecialProducts recipeExtension = recipeDef.GetModExtension<RecipeDefExtension_SpecialProducts>();
             List<ThingDefCountClass> possibleProducts = new List<ThingDefCountClass>();
@@ -76,7 +76,7 @@ namespace ArgonicCore.Utilities
         }
 
         // THIS HAS FIXED INGREDIENTS. THEY'RE FIXED.
-        public static IEnumerable<Thing> GetQualityModifiedThings(RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingDefStyle style, int? overrideGraphicIndex)
+        public static IEnumerable<Thing> GetQualityModifiedThings(RecipeDef recipeDef, Pawn worker, List<Thing> ingredients, Precept_ThingStyle precept, ThingStyleDef style, int? overrideGraphicIndex)
         {
             ThingDef thingDef;
             List<ThingDef> products;

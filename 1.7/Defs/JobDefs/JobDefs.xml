@@ -1,0 +1,17 @@
+<Defs>
+
+    <JobDef>
+        <defName>AC_CoatWall</defName>
+        <driverClass>ArgonicCore.JobDrivers.JobDriver_CoatWall</driverClass>
+        <reportString>coating TargetA.</reportString>
+        <casualInterruptible>false</casualInterruptible>
+    </JobDef>
+
+    <JobDef>
+        <defName>AC_ResourceDig</defName>
+        <driverClass>ArgonicCore.JobDrivers.JobDriver_ResourceDig</driverClass>
+        <reportString>digging at TargetA.</reportString>
+        <casualInterruptible>false</casualInterruptible>
+    </JobDef>
+
+</Defs>
